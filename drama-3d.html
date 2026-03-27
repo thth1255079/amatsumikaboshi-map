@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>星神の封印 ── 時代の層</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho+B1:wght@700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  width:100%;height:100%;
+  background:#050302;
+  overflow:hidden;
+  font-family:'Noto Sans JP',sans-serif;
+  color:#f0e2c8;
+  touch-action:none;
+}
+
+/* ── ヘッダー ── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:.55rem 1rem .45rem;
+  background:linear-gradient(180deg,rgba(5,3,2,1) 60%,transparent);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:.5rem;
+}
+#hdr h1{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:1.05rem;letter-spacing:.1em;color:#f0d060;
+  white-space:nowrap;
+}
+.hbtns{display:flex;gap:.4rem;}
+.hbtn{
+  font-size:.6rem;padding:.3rem .6rem;
+  background:#1e1408;border:1px solid #c9922a;
+  color:#e8b84b;border-radius:4px;cursor:pointer;
+  white-space:nowrap;letter-spacing:.05em;
+  transition:background .15s;
+}
+.hbtn:hover{background:#2a1e08;}
+.hbtn.active{background:#3a2a08;border-color:#f0d060;color:#f0d060;}
+
+/* ── 3D ステージ ── */
+#stage{
+  position:fixed;inset:0;
+  perspective:1200px;
+  perspective-origin:50% 40%;
+  overflow:hidden;
+}
+#world{
+  position:absolute;
+  width:900px;height:700px;
+  top:50%;left:50%;
+  transform-style:preserve-3d;
+  transform-origin:center center;
+  /* JS で制御 */
+}
+
+/* ── 時代プレート（面） ── */
+.era-plate{
+  position:absolute;
+  transform-style:preserve-3d;
+  pointer-events:none;
+}
+.era-face{
+  position:absolute;
+  border-radius:16px;
+  opacity:.18;
+  pointer-events:none;
+}
+.era-label-3d{
+  position:absolute;
+  font-family:'Shippori Mincho B1',serif;
+  font-size:.75rem;letter-spacing:.25em;
+  font-weight:700;
+  pointer-events:none;
+  white-space:nowrap;
+  text-shadow:0 2px 8px rgba(0,0,0,.8);
+}
+
+/* ── SVG 接続線 ── */
+#svg-lines{
+  position:absolute;
+  width:900px;height:700px;
+  top:0;left:0;
+  transform-style:preserve-3d;
+  pointer-events:none;
+  overflow:visible;
+}
+
+/* ── ノードカード ── */
+.nd{
+  position:absolute;
+  transform-style:preserve-3d;
+  cursor:pointer;
+  user-select:none;
+}
+.card{
+  position:relative;
+  border-radius:10px;
+  padding:.6rem .85rem;
+  text-align:center;
+  min-width:96px;
+  box-shadow:0 6px 24px rgba(0,0,0,.8);
+  transition:transform .15s, box-shadow .15s;
+  backface-visibility:hidden;
+}
+.nd:hover .card{
+  transform:scale(1.08) translateZ(8px);
+  box-shadow:0 12px 32px rgba(0,0,0,.9);
+}
+.nd:active .card{transform:scale(.95);}
+
+.card-icon{font-size:1.4rem;line-height:1;margin-bottom:.18rem;}
+.card-name{font-size:.82rem;font-weight:700;letter-spacing:.05em;line-height:1.3;}
+.card-role{font-size:.55rem;color:#a09080;margin-top:.18rem;line-height:1.4;}
+
+/* カテゴリ */
+.c-star .card{background:#1e1506;border:3px solid #e8b84b;box-shadow:0 0 24px rgba(232,184,75,.4),0 6px 24px rgba(0,0,0,.8);}
+.c-star .card-name{color:#f0d060;}
+.c-deity .card{background:#1a1506;border:2px solid #c9922a;}
+.c-deity .card-name{color:#f0c84a;}
+.c-clan .card{background:#0c1a28;border:2px solid #6a8aaa;}
+.c-clan .card-name{color:#9ac4e8;}
+.c-hero .card{background:#280808;border:2px solid #cc3333;}
+.c-hero .card-name{color:#ff8888;}
+.c-shogun .card{background:#082018;border:2px solid #2a8e52;}
+.c-shogun .card-name{color:#5de89a;}
+.c-crow .card{background:#160a20;border:2px dashed #8a5ab8;}
+.c-crow .card-name{color:#c898e8;}
+.c-place .card{background:#120e04;border:2px dashed #7a5a18;}
+.c-place .card-name{color:#d8b850;}
+
+/* ── 凡例 ── */
+#legend{
+  position:fixed;bottom:.8rem;left:.8rem;z-index:100;
+  display:flex;flex-direction:column;gap:.3rem;
+}
+.leg{display:flex;align-items:center;gap:.4rem;font-size:.58rem;color:#c8b89a;}
+.ldot{width:10px;height:10px;border-radius:2px;}
+
+/* ── 操作ヒント ── */
+#hint{
+  position:fixed;bottom:.8rem;right:.8rem;z-index:100;
+  font-size:.58rem;color:#c9922a;
+  background:#150f05;border:1px solid #3a2a08;
+  padding:.35rem .7rem;border-radius:6px;
+  line-height:1.8;text-align:right;
+}
+
+/* ══════ MODAL ══════ */
+#ov{
+  display:none;position:fixed;inset:0;
+  background:rgba(4,2,1,.93);backdrop-filter:blur(10px);
+  z-index:200;align-items:flex-end;justify-content:center;
+}
+#ov.open{display:flex;}
+#modal{
+  background:#150f05;
+  border:3px solid #c9922a;border-bottom:none;
+  border-radius:16px 16px 0 0;
+  width:100%;max-width:560px;
+  max-height:75vh;overflow-y:auto;
+  padding:1.4rem 1.4rem 2rem;
+  position:relative;
+  animation:sup .28s cubic-bezier(.22,1,.36,1);
+}
+@keyframes sup{from{transform:translateY(100%);}to{transform:translateY(0);}}
+#modal::before{
+  content:'';display:block;
+  width:40px;height:4px;border-radius:2px;
+  background:#2a1e08;margin:0 auto 1rem;
+}
+#mcl{
+  position:absolute;top:1.1rem;right:1.1rem;
+  font-size:1.4rem;color:#6a5040;cursor:pointer;
+  background:none;border:none;line-height:1;transition:color .15s;
+}
+#mcl:hover{color:#f0e2c8;}
+#micon{font-size:2rem;margin-bottom:.3rem;}
+#mtitle{font-family:'Shippori Mincho B1',serif;font-size:1.2rem;font-weight:700;letter-spacing:.08em;color:#e8b84b;margin-bottom:.18rem;}
+#msub{font-size:.7rem;color:#c9922a;margin-bottom:.9rem;letter-spacing:.04em;}
+.ms{margin-bottom:.85rem;}
+.mst{font-size:.65rem;font-weight:700;letter-spacing:.18em;color:#c9922a;margin-bottom:.3rem;padding-bottom:.22rem;border-bottom:1px solid #2a1a08;}
+.msb{font-size:.82rem;line-height:1.9;color:#c8b89a;}
+.msb strong{color:#f0e2c8;}
+.msb em{color:#e8b84b;font-style:normal;}
+.mlinks{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.85rem;}
+.mlbtn{font-size:.65rem;padding:.28rem .65rem;background:#1e1408;border:1px solid #c9922a;border-radius:4px;color:#e8b84b;cursor:pointer;letter-spacing:.04em;transition:background .12s;}
+.mlbtn:hover{background:#2a1e08;}
+.mera{display:inline-block;font-size:.58rem;padding:.12rem .45rem;border-radius:3px;margin-bottom:.6rem;letter-spacing:.1em;font-weight:700;}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <h1>⭐ 星神の封印 ── 時代の層</h1>
+  <div class="hbtns">
+    <div class="hbtn active" id="btn-3d" onclick="setMode('3d')">3D表示</div>
+    <div class="hbtn" id="btn-flat" onclick="setMode('flat')">平面表示</div>
+  </div>
+</div>
+
+<div id="stage">
+  <div id="world">
+    <!-- SVG lines -->
+    <svg id="svg-lines" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<div id="legend">
+  <div class="leg"><div class="ldot" style="background:#1e1506;border:2px solid #e8b84b;"></div>星神・核</div>
+  <div class="leg"><div class="ldot" style="background:#1a1506;border:2px solid #c9922a;"></div>神話・神格</div>
+  <div class="leg"><div class="ldot" style="background:#0c1a28;border:2px solid #6a8aaa;"></div>氏族・権力</div>
+  <div class="leg"><div class="ldot" style="background:#280808;border:2px solid #cc3333;"></div>英雄・怨霊</div>
+  <div class="leg"><div class="ldot" style="background:#082018;border:2px solid #2a8e52;"></div>幕府・近世</div>
+  <div class="leg"><div class="ldot" style="background:#160a20;border:2px dashed #8a5ab8;"></div>天皇家・烏</div>
+</div>
+<div id="hint">ドラッグ：回転<br>ピンチ：拡縮<br>タップ：詳細</div>
+
+<!-- MODAL -->
+<div id="ov" onclick="closeOv(event)">
+<div id="modal">
+  <button id="mcl" onclick="closeModal()">✕</button>
+  <div id="micon"></div>
+  <div id="mtitle"></div>
+  <div id="msub"></div>
+  <div id="mcont"></div>
+  <div id="mlinks" class="mlinks"></div>
+</div>
+</div>
+
+<script>
+// ════════════════════════════════
+//  時代定義（奥行き Z 値と色）
+// ════════════════════════════════
+const ERAS=[
+  {id:'myth',  label:'神 話 層',   z: 240, color:'#c9922a', bg:'rgba(201,146,42,.12)'},
+  {id:'tenn',  label:'天 皇 家 東 征', z: 120, color:'#8a5ab8', bg:'rgba(138,90,184,.10)'},
+  {id:'koten', label:'古 代 氏 族 層', z:   0, color:'#6a8aaa', bg:'rgba(106,138,170,.10)'},
+  {id:'chuse', label:'中 世 層',   z:-140, color:'#cc3333',  bg:'rgba(204,51,51,.10)'},
+  {id:'kinse', label:'近 世 層',   z:-280, color:'#2a8e52',  bg:'rgba(42,142,82,.10)'},
+];
+
+// ════════════════════════════════
+//  ノード定義
+//  x,y: ワールド平面座標（900x700基準）
+//  era: 時代ID → Z値を参照
+// ════════════════════════════════
+const NODES=[
+  // 神話層
+  {id:'ama', era:'myth',  cat:'c-star',   x:450, y:160, icon:'⭐', name:'アマツミカボシ\n（天津甕星）', role:'まつろわぬ星神・封印の核', did:'amatsumikaboshi'},
+  {id:'fut', era:'myth',  cat:'c-deity',  x:220, y:280, icon:'⚡', name:'経津主神\n（フツヌシ）',     role:'物部系・香取神宮',         did:'futsunushi'},
+  {id:'tak', era:'myth',  cat:'c-deity',  x:680, y:280, icon:'⚡', name:'武甕槌神\n（タケミカヅチ）', role:'藤原系・鹿島神宮',         did:'takemikazuchi'},
+  {id:'omi', era:'myth',  cat:'c-deity',  x:450, y:310, icon:'🗿', name:'建葉槌命',                  role:'倭文氏・宿魂石の番人',      did:'omika'},
+  // 天皇家東征層
+  {id:'yat', era:'tenn',  cat:'c-crow',   x:200, y:200, icon:'🐦‍⬛', name:'八咫烏\n（ヤタガラス）',  role:'天皇家東征・光の道案内',   did:'yatagarasu'},
+  // 古代氏族層
+  {id:'mon', era:'koten', cat:'c-clan',   x:200, y:280, icon:'🏛', name:'物部氏',                   role:'十種神宝・鎮魂法・石見〜東国',did:'mononobe'},
+  {id:'fuj', era:'koten', cat:'c-clan',   x:700, y:280, icon:'🏛', name:'藤原氏',                   role:'摂関政治・中央権力',        did:'fujiwara'},
+  // 中世層
+  {id:'chi', era:'chuse', cat:'c-clan',   x:260, y:260, icon:'🏹', name:'千葉氏',                   role:'妙見（北極星）信仰・下総',  did:'chiba'},
+  {id:'mas', era:'chuse', cat:'c-hero',   x:500, y:300, icon:'⚔', name:'平 将門',                  role:'新皇・北斗七星化身・怨霊',  did:'masakado'},
+  // 近世層
+  {id:'iye', era:'kinse', cat:'c-shogun', x:500, y:240, icon:'🏯', name:'徳川 家康',                role:'江戸・全封印の統合者',      did:'ieyasu'},
+  {id:'kan', era:'kinse', cat:'c-place',  x:300, y:380, icon:'👁', name:'将門首塚\n神田明神',        role:'大手町・鬼門封印',          did:'kanda'},
+  {id:'kas', era:'kinse', cat:'c-place',  x:700, y:380, icon:'⛩', name:'鹿島・香取\n神宮',          role:'要石・東国守護軸',          did:'kashima'},
+];
+
+// ════════════════════════════════
+//  関係線定義
+// ════════════════════════════════
+const RELS=[
+  {f:'omi', t:'ama', l:'宿魂石に封印',     c:'#e8b84b', w:3},
+  {f:'fut', t:'ama', l:'討伐',             c:'#c9922a', w:2},
+  {f:'tak', t:'ama', l:'討伐',             c:'#c9922a', w:2},
+  {f:'yat', t:'ama', l:'光 vs 闇',         c:'#9a6ab8', w:1.5, d:'5,4'},
+  {f:'mon', t:'fut', l:'奉斎',             c:'#7a9ab8', w:1.5, d:'5,4'},
+  {f:'fuj', t:'tak', l:'奉斎',             c:'#7a9ab8', w:1.5, d:'5,4'},
+  {f:'mon', t:'chi', l:'残党逃亡説',       c:'#7a9ab8', w:1.5, d:'4,5'},
+  {f:'fuj', t:'chi', l:'委任統治',         c:'#7a9ab8', w:1,   d:'6,4'},
+  {f:'chi', t:'mas', l:'同族・妙見で昇華', c:'#cc3333', w:2},
+  {f:'mas', t:'ama', l:'北斗七星化身',     c:'#cc3333', w:1.5, d:'4,4'},
+  {f:'iye', t:'mas', l:'怨霊→守護神転用', c:'#2a8e52', w:2},
+  {f:'iye', t:'ama', l:'日光真北封印',     c:'#2a8e52', w:2,   d:'3,4'},
+  {f:'iye', t:'kas', l:'東の守護軸',       c:'#2a8e52', w:1.5},
+  {f:'mas', t:'kan', l:'首塚・神田明神',   c:'#cc3333', w:1.5},
+  {f:'iye', t:'kan', l:'鬼門に配置',       c:'#2a8e52', w:1.5},
+];
+
+// ═══════════════════════════════════════
+//  3D 座標計算
+// ═══════════════════════════════════════
+function getEraZ(eraId){
+  const e=ERAS.find(e=>e.id===eraId);
+  return e?e.z:0;
+}
+
+// ワールド座標（中心基準）
+function nodeWorld(n){
+  return {
+    x: n.x - 450,
+    y: n.y - 350,
+    z: getEraZ(n.era)
+  };
+}
+
+// ノードマップ
+const nodeMap={};
+NODES.forEach(n=>nodeMap[n.id]=n);
+
+// ═══════════════════════════════════════
+//  DOM 構築
+// ═══════════════════════════════════════
+const world=document.getElementById('world');
+
+// 時代プレート（背景面）
+ERAS.forEach(era=>{
+  const plate=document.createElement('div');
+  plate.className='era-plate';
+  plate.style.cssText=`
+    width:820px;height:480px;
+    left:-410px;top:-240px;
+    transform:translateZ(${era.z}px);
+  `;
+  // 面
+  const face=document.createElement('div');
+  face.className='era-face';
+  face.style.cssText=`
+    inset:0;background:${era.bg};
+    border:1px solid ${era.color};
+    border-radius:16px;
+    box-shadow: inset 0 0 40px rgba(0,0,0,.3);
+  `;
+  plate.appendChild(face);
+  // ラベル
+  const lbl=document.createElement('div');
+  lbl.className='era-label-3d';
+  lbl.style.cssText=`
+    top:-1.4rem;left:1.2rem;
+    color:${era.color};
+    font-size:.75rem;letter-spacing:.3em;
+  `;
+  lbl.textContent=era.label;
+  plate.appendChild(lbl);
+  world.appendChild(plate);
+});
+
+// ノードカード
+NODES.forEach(n=>{
+  const el=document.createElement('div');
+  el.className=`nd ${n.cat}`;
+  el.id='nd-'+n.id;
+  el.dataset.did=n.did;
+  const z=getEraZ(n.era);
+  el.style.cssText=`
+    left:${n.x-450}px;top:${n.y-350}px;
+    transform:translateZ(${z}px) translate(-50%,-50%);
+  `;
+  const nameParts=n.name.split('\n');
+  el.innerHTML=`
+    <div class="card">
+      <div class="card-icon">${n.icon}</div>
+      <div class="card-name">${nameParts.join('<br>')}</div>
+      <div class="card-role">${n.role}</div>
+    </div>
+  `;
+  el.addEventListener('click',e=>{
+    e.stopPropagation();
+    openModal(n.did);
+  });
+  world.appendChild(el);
+});
+
+// ═══════════════════════════════════════
+//  SVG 関係線
+// ═══════════════════════════════════════
+function drawLines(){
+  const svg=document.getElementById('svg-lines');
+  svg.innerHTML='';
+
+  // arrowhead defs
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  const arrowColors=['#e8b84b','#c9922a','#cc3333','#2a8e52','#7a9ab8','#9a6ab8'];
+  arrowColors.forEach(c=>{
+    const m=document.createElementNS('http://www.w3.org/2000/svg','marker');
+    const mid='arr'+c.replace(/[^a-f0-9]/gi,'');
+    m.setAttribute('id',mid);
+    m.setAttribute('markerWidth','7');m.setAttribute('markerHeight','7');
+    m.setAttribute('refX','6');m.setAttribute('refY','3');m.setAttribute('orient','auto');
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d','M0,0 L0,6 L7,3 z');p.setAttribute('fill',c);p.setAttribute('opacity','.8');
+    m.appendChild(p);defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+
+  RELS.forEach(r=>{
+    const fn=nodeMap[r.f], tn=nodeMap[r.t];
+    if(!fn||!tn)return;
+
+    // SVGはZ軸を無視した2D射影で描画（3D感はCSS perspective任せ）
+    // Z差を y方向に少し投影して奥行き感を出す
+    const fz=getEraZ(fn.era), tz=getEraZ(tn.era);
+    const proj=0.08; // Z → Y の射影係数
+    const fx=fn.x-450, fy=fn.y-350 - fz*proj;
+    const tx2=tn.x-450, ty2=tn.y-350 - tz*proj;
+
+    const mx=(fx+tx2)/2+(fy-ty2)*0.18;
+    const my=(fy+ty2)/2-(fx-tx2)*0.18;
+
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${fx},${fy} Q${mx},${my} ${tx2},${ty2}`);
+    path.setAttribute('stroke',r.c||'#c9922a');
+    path.setAttribute('stroke-width',r.w||1.5);
+    path.setAttribute('fill','none');
+    path.setAttribute('opacity','0.7');
+    if(r.d) path.setAttribute('stroke-dasharray',r.d);
+    const mid2='arr'+(r.c||'#c9922a').replace(/[^a-f0-9]/gi,'');
+    path.setAttribute('marker-end',`url(#${mid2})`);
+    svg.appendChild(path);
+
+    if(r.l){
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',mx);t.setAttribute('y',my-7);
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('font-size','9');
+      t.setAttribute('fill',r.c||'#c9922a');
+      t.setAttribute('font-family','Noto Sans JP,sans-serif');
+      t.setAttribute('opacity','0.9');
+      t.textContent=r.l;
+      svg.appendChild(t);
+    }
+  });
+}
+drawLines();
+
+// ═══════════════════════════════════════
+//  3D 回転制御
+// ═══════════════════════════════════════
+let rotX=18, rotY=-12, scale=1.0;
+let mode='3d';
+let dragging=false, lastX=0, lastY=0;
+
+function applyTransform(){
+  if(mode==='3d'){
+    world.style.transform=`
+      translateZ(0px)
+      scale(${scale})
+      rotateX(${rotX}deg)
+      rotateY(${rotY}deg)
+    `;
+    document.getElementById('hint').textContent='ドラッグ：回転\nピンチ：拡縮\nタップ：詳細';
+  } else {
+    world.style.transform=`scale(${scale}) rotateX(0deg) rotateY(0deg)`;
+    document.getElementById('hint').textContent='ドラッグ：移動\nピンチ：拡縮\nタップ：詳細';
+  }
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-3d').classList.toggle('active',m==='3d');
+  document.getElementById('btn-flat').classList.toggle('active',m==='flat');
+  if(m==='3d'){rotX=18;rotY=-12;}
+  else{rotX=0;rotY=0;}
+  applyTransform();
+}
+
+applyTransform();
+
+// マウスドラッグ
+const stage=document.getElementById('stage');
+let panX=0,panY=0;
+
+stage.addEventListener('mousedown',e=>{
+  if(e.target.closest('.nd'))return;
+  dragging=true;lastX=e.clientX;lastY=e.clientY;
+  e.preventDefault();
+});
+window.addEventListener('mousemove',e=>{
+  if(!dragging)return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  if(mode==='3d'){
+    rotY+=dx*0.35;
+    rotX-=dy*0.35;
+    rotX=Math.max(-55,Math.min(55,rotX));
+  }else{
+    // 平面モードはパン
+    const st=world.style.transform;
+    // 位置移動はCSS marginで
+    panX+=dx;panY+=dy;
+    world.style.marginLeft=panX+'px';
+    world.style.marginTop=panY+'px';
+  }
+  lastX=e.clientX;lastY=e.clientY;
+  applyTransform();
+});
+window.addEventListener('mouseup',()=>dragging=false);
+
+// ホイール
+stage.addEventListener('wheel',e=>{
+  e.preventDefault();
+  scale=Math.max(.3,Math.min(2.2,scale*(e.deltaY>0?.92:1.09)));
+  applyTransform();
+},{passive:false});
+
+// タッチ
+let touches2=[], lastDist2=0;
+stage.addEventListener('touchstart',e=>{
+  touches2=Array.from(e.touches);
+  lastX=touches2[0].clientX;lastY=touches2[0].clientY;
+  if(touches2.length===2){
+    lastDist2=Math.hypot(
+      touches2[0].clientX-touches2[1].clientX,
+      touches2[0].clientY-touches2[1].clientY
+    );
+  }
+},{passive:true});
+
+stage.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const cur=Array.from(e.touches);
+  if(cur.length===2&&lastDist2>0){
+    const d=Math.hypot(
+      cur[0].clientX-cur[1].clientX,
+      cur[0].clientY-cur[1].clientY
+    );
+    scale=Math.max(.3,Math.min(2.2,scale*(d/lastDist2)));
+    lastDist2=d;
+  } else if(cur.length===1){
+    const dx=cur[0].clientX-lastX, dy=cur[0].clientY-lastY;
+    if(mode==='3d'){
+      rotY+=dx*0.4;
+      rotX-=dy*0.4;
+      rotX=Math.max(-55,Math.min(55,rotX));
+    }else{
+      panX+=dx;panY+=dy;
+      world.style.marginLeft=panX+'px';
+      world.style.marginTop=panY+'px';
+    }
+    lastX=cur[0].clientX;lastY=cur[0].clientY;
+  }
+  applyTransform();
+},{passive:false});
+
+stage.addEventListener('touchend',e=>{
+  if(e.touches.length<2)lastDist2=0;
+  touches2=Array.from(e.touches);
+},{passive:true});
+
+// ═══════════════════════════════════════
+//  モーダルデータ
+// ═══════════════════════════════════════
+const ERA_LABELS={
+  myth:'神話層',tenn:'天皇家東征',koten:'古代氏族層',chuse:'中世層',kinse:'近世層'
+};
+const ERA_COLORS={
+  myth:'#c9922a',tenn:'#8a5ab8',koten:'#6a8aaa',chuse:'#cc3333',kinse:'#2a8e52'
+};
+
+const D={
+  amatsumikaboshi:{
+    era:'myth',icon:'⭐',title:'アマツミカボシ（天津甕星）',sub:'別名：天香香背男 ／ まつろわぬ星神 ／ 封印の核',
+    secs:[
+      {t:'正体',b:'日本書紀の一書に登場する<strong>星の神</strong>。国譲り神話で葦原中国平定に最後まで抵抗した「まつろわぬ神」の象徴。経津主神・武甕槌神が遣わされる前に「天に悪神あり」と言われた存在。'},
+      {t:'常陸・宿魂石への封印',b:'常陸国の<strong>大甕山</strong>に逃れ巨岩に化して抵抗。建葉槌命に倒され、その岩（宿魂石）に魂が封印された。大甕神社（日立市）の社殿が巨岩の上に建つ。'},
+      {t:'北極星・金星のイメージ',b:'<em>北極星・金星（明けの明星）</em>のイメージを持つ。千葉氏の妙見（北極星）信仰、将門の「北斗七星化身説」も、この星神エネルギーを取り込む構造。'},
+      {t:'物部鎮魂法との接点',b:'「布瑠部ゆらゆらと布瑠部」は<strong>死者を蘇らせる</strong>振動儀式。アマツミカボシが象徴する「生死の境界」を操作しようとするもの。物部神社の由緒書きに秘儀として記されている。'},
+    ],
+    links:['futsunushi','takemikazuchi','omika','yatagarasu','mononobe']
+  },
+  futsunushi:{
+    era:'myth',icon:'⚡',title:'経津主神（フツヌシ）',sub:'香取神宮の御祭神 ／ 物部系の剣神',
+    secs:[
+      {t:'神格',b:'「フツ」は剣の切れ味の擬音。<strong>韴霊剣（ふつのみたま）</strong>の神格化。物部氏が奉じた軍事の神。国譲り神話でアマツミカボシ討伐に関わる。'},
+      {t:'香取神宮と要石',b:'千葉県香取市の<strong>香取神宮</strong>に鎮座。境内に<em>要石</em>。鹿島の要石と対になって「大鯰の頭と尾を押さえる」二重封印装置。'},
+      {t:'物部氏との関係',b:'物部の祖が携えた<strong>十種神宝</strong>中の韴霊剣がフツノミタマ（経津主神の本体）。物部が587年に中央で滅びても香取神宮の神統は生き続けた。'},
+    ],
+    links:['amatsumikaboshi','mononobe','kashima']
+  },
+  takemikazuchi:{
+    era:'myth',icon:'⚡',title:'武甕槌神（タケミカヅチ）',sub:'鹿島神宮の御祭神 ／ 藤原系の雷神',
+    secs:[
+      {t:'神格',b:'雷神・剣神。国譲り神話の主役。藤原氏（中臣氏）の守護神として中央権力の象徴となった。'},
+      {t:'鹿島神宮と要石',b:'茨城県鹿嶋市の<strong>鹿島神宮</strong>に鎮座。境内の<em>要石</em>は地中で大鯰の頭を押さえているとされる。江戸時代に引き抜こうとしたが底がなく断念した記録がある。'},
+      {t:'藤原氏との関係',b:'「武の物部（フツノミタマ）」vs「政の藤原（タケミカヅチ）」という東国支配の二軸が香取・鹿島として地理的に表現されている。'},
+    ],
+    links:['amatsumikaboshi','fujiwara','kashima']
+  },
+  omika:{
+    era:'myth',icon:'🗿',title:'建葉槌命（タケハツチ）',sub:'倭文氏の祖神 ／ 大甕山の封印神',
+    secs:[
+      {t:'神格',b:'機織り・呪術関連の部民「倭文氏」の祖神。アマツミカボシを岩ごと封印した「境界の番人」。'},
+      {t:'大甕神社',b:'社殿が<strong>宿魂石という巨岩の上に直接建つ</strong>という極めて珍しい構造。民間伝承では金の靴で巨岩を蹴り砕いたという話も残る。'},
+      {t:'封印の技法',b:'「宿魂」＝魂を宿す石。物部の鎮魂法（振動で魂を体に戻す）と逆の技法。<em>封印石と鎮魂法は「魂の境界」を扱う表裏一体の技術。</em>'},
+    ],
+    links:['amatsumikaboshi']
+  },
+  yatagarasu:{
+    era:'tenn',icon:'🐦‍⬛',title:'八咫烏（ヤタガラス）',sub:'三本足の烏 ／ 神武天皇の道案内 ／ 天皇家東征の象徴',
+    secs:[
+      {t:'神話上の役割',b:'神武天皇が熊野から大和へ東征する際、天照大神から遣わされた三本足の烏。険しい山道の<strong>道案内</strong>を担った。'},
+      {t:'三本足の意味',b:'<em>太陽の象徴（三足烏）</em>。賀茂氏（上賀茂・下鴨神社）の祖・賀茂建角身命がヤタガラスに化したとされる。'},
+      {t:'アマツミカボシとの対比',b:'アマツミカボシ＝<em>まつろわぬ星（闇・抵抗）</em>に対し、ヤタガラス＝<em>光の烏（道案内・天皇家守護）</em>。神武東征（ヤタガラス）と星神封印（大甕山）は「天皇家による国土統一」の表と裏。'},
+    ],
+    links:['amatsumikaboshi','fujiwara']
+  },
+  mononobe:{
+    era:'koten',icon:'🏛',title:'物部氏',sub:'軍事・鎮魂・死者蘇生の秘法を担う古代氏族',
+    secs:[
+      {t:'祖神と本拠',b:'祖神：<strong>宇摩志麻遅命（うましまじのみこと）</strong>。石見国一宮・物部神社（島根県大田市）が中心。その由緒書きに鎮魂法の秘儀が記されている。'},
+      {t:'十種神宝と鎮魂法',b:'<em>「一二三四五六七八九十、布瑠部（ふるべ）、由良由良止（ゆらゆらと）布瑠部」</em><br>先代旧事本紀：「死れる人は返りて生きなむ」。<strong>死者蘇生の秘儀。</strong>'},
+      {t:'587年滅亡と東国逃亡説',b:'物部守屋が蘇我馬子・聖徳太子に敗北。一部が東国（常陸・下総）に落ち延び在地豪族と融合したという説。鎮魂法が東国に残った経路かもしれない。'},
+    ],
+    links:['amatsumikaboshi','futsunushi','chiba']
+  },
+  fujiwara:{
+    era:'koten',icon:'🏛',title:'藤原氏（中臣氏）',sub:'朝廷支配を確立した中央権力氏族',
+    secs:[
+      {t:'成立',b:'中臣鎌足が645年の大化改新で台頭。子・藤原不比等が律令体制整備。タケミカヅチ（鹿島）を奉じ摂関政治で権力を独占。'},
+      {t:'物部氏との対立',b:'587年に物部守屋を滅ぼした蘇我氏の後継として台頭。「武の物部・政の藤原」。東国支配の二軸。'},
+      {t:'将門討伐',b:'将門の乱を<strong>藤原秀郷（俵藤太）</strong>と平貞盛が討伐。将門怨霊は強力すぎ封印が必要になった。'},
+    ],
+    links:['takemikazuchi','masakado','chiba','kashima']
+  },
+  chiba:{
+    era:'chuse',icon:'🏹',title:'千葉氏',sub:'下総・常陸の支配豪族 ／ 妙見（北極星）信仰',
+    secs:[
+      {t:'出自',b:'桓武平氏の流れ。将門と同じ平氏の血筋。将門の乱では朝廷側についたが同族の記憶は残る。下総国千葉庄を本拠に常陸を実効支配。'},
+      {t:'妙見菩薩信仰',b:'氏神として<em>妙見菩薩（北極星・北斗七星）</em>を信仰。アマツミカボシ（天の星神・北極星）との習合が構造的に起きる。'},
+      {t:'星神取り込みの構造',b:'封印された星神（アマツミカボシ）を妙見として守護神に取り込む。将門（北斗七星化身）を同族として内包する。<em>「まつろわぬ星のエネルギーを守護に変換」する構造の完成形。</em>'},
+    ],
+    links:['amatsumikaboshi','masakado','mononobe']
+  },
+  masakado:{
+    era:'chuse',icon:'⚔',title:'平 将門',sub:'東国の覇者 ／ まつろわぬ怨霊の代名詞',
+    secs:[
+      {t:'生涯と乱',b:'桓武平氏。935〜940年に常陸〜関東を制圧し<em>「新皇」</em>を自称。藤原秀郷・平貞盛に討伐され落命。'},
+      {t:'北斗七星化身説',b:'七人の影武者が次々倒され本体だけ残ったという伝承。「北斗七星のうち六星が消えて一星残った」と読む民間解釈。千葉氏の妙見（北斗）信仰と直結。'},
+      {t:'首塚と怨霊',b:'<strong>大手町の将門首塚</strong>は現在も東京に存在。移転しようとすると不幸が続くとされ手がつけられない。'},
+      {t:'神田明神と明治の消去・戦後復位',b:'家康が江戸城の鬼門方向に神田明神を配置し守護神に転用。1874年に明治政府が祭神から除外→1984年に正式復位。<em>まつろわぬエネルギーは近代まで政治的に危険視された。</em>'},
+    ],
+    links:['chiba','fujiwara','kanda','ieyasu','amatsumikaboshi']
+  },
+  ieyasu:{
+    era:'kinse',icon:'🏯',title:'徳川 家康',sub:'江戸という最終封印装置の設計者',
+    secs:[
+      {t:'江戸入府と霊的設計',b:'1590年に江戸入府。風水・陰陽道的な霊的設計を都市の骨格に組み込んだ。'},
+      {t:'将門怨霊の転用',b:'神田明神（将門の怨霊）を<strong>江戸城の鬼門（東北）方向</strong>に配置し怨霊の力を逆用。「最大の怨霊を最強の守護神に転用」。'},
+      {t:'日光東照宮の真北配置',b:'家康の廟所・日光東照宮は江戸城から<em>ほぼ真北</em>に位置する。北極星（アマツミカボシが象徴する天の中心）を「上から封じる」配置。将門首塚→江戸城→日光という<em>南北の霊的軸線</em>。'},
+      {t:'全封印の統合',b:'①将門怨霊転用、②鹿島・香取東守護軸、③日光真北封印、④千葉氏妙見圏吸収。<em>「まつろわぬ星のエネルギーを封じて権力の礎にする」パターンの集大成。</em>'},
+    ],
+    links:['masakado','kashima','kanda','amatsumikaboshi']
+  },
+  kanda:{
+    era:'kinse',icon:'👁',title:'将門首塚・神田明神',sub:'大手町の怨霊封印 ／ 明治に除外→1984年復位',
+    secs:[
+      {t:'将門首塚',b:'東京都千代田区大手町。高層ビルの谷間に突然現れる石造りの塚。移転・撤去しようとするたびに関係者に不幸・事故が続いたとされ現在も動かされていない。'},
+      {t:'神田明神',b:'将門を祭神として祀る。家康が江戸城の<strong>鬼門（東北）方向に配置</strong>し怨霊の力を江戸守護に転用。'},
+      {t:'明治の消去と戦後復位',b:'1874年、明治政府が将門を祭神から外した。理由：天皇に反逆した将門が天皇制国家に不適切。1984年に正式復位。<em>まつろわぬエネルギーは完全には封印できなかった。</em>'},
+    ],
+    links:['masakado','ieyasu']
+  },
+  kashima:{
+    era:'kinse',icon:'⛩',title:'鹿島神宮・香取神宮',sub:'東国の二大封印神宮 ／ 要石（三箇所）',
+    secs:[
+      {t:'位置関係',b:'<strong>鹿島神宮</strong>（茨城・鹿嶋）：タケミカヅチ＝藤原系。<strong>香取神宮</strong>（千葉・香取）：フツヌシ＝物部系。利根川を挟んで向かい合い東国支配の霊的二軸を形成。'},
+      {t:'要石（三箇所！）',b:'両神宮にそれぞれ<em>要石</em>がある。「大鯰の頭（鹿島）と尾（香取）を押さえている」とされる地震封じ。大甕の宿魂石と合わせると<strong>三箇所の封印石</strong>が東国に存在する。'},
+      {t:'家康の統合',b:'家康が鹿島・香取を東方の守護軸に組み込んだ。物部（香取）・藤原（鹿島）という古代の対立を統合する形で東国霊的支配を完成させた。'},
+    ],
+    links:['futsunushi','takemikazuchi','ieyasu']
+  },
+};
+
+// ─── モーダル開閉 ───
+function openModal(id){
+  const d=D[id];if(!d)return;
+  const eraLabel=ERA_LABELS[d.era]||'';
+  const eraColor=ERA_COLORS[d.era]||'#c9922a';
+  document.getElementById('micon').textContent=d.icon;
+  document.getElementById('mtitle').textContent=d.title;
+  document.getElementById('msub').innerHTML=
+    `<span class="mera" style="background:${eraColor}22;border:1px solid ${eraColor};color:${eraColor};">${eraLabel}</span> ${d.sub}`;
+  let html='';
+  d.secs.forEach(s=>{
+    html+=`<div class="ms"><div class="mst">${s.t}</div><div class="msb">${s.b}</div></div>`;
+  });
+  document.getElementById('mcont').innerHTML=html;
+  let lh='';
+  if(d.links&&d.links.length){
+    lh='<div style="font-size:.62rem;color:#c9922a;width:100%;letter-spacing:.15em;margin-bottom:.38rem;font-weight:700;">関連する人物・場所</div>';
+    d.links.forEach(lid=>{
+      const ld=D[lid];
+      if(ld) lh+=`<div class="mlbtn" onclick="openModal('${lid}')">${ld.icon} ${ld.title.substring(0,14)}</div>`;
+    });
+  }
+  document.getElementById('mlinks').innerHTML=lh;
+  document.getElementById('ov').classList.add('open');
+  document.getElementById('modal').scrollTop=0;
+}
+function closeModal(){document.getElementById('ov').classList.remove('open');}
+function closeOv(e){if(e.target===document.getElementById('ov'))closeModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ─── 自動回転（アイドル時） ───
+let autoRot=true, idleTimer;
+function resetIdle(){
+  autoRot=false;
+  clearTimeout(idleTimer);
+  idleTimer=setTimeout(()=>autoRot=true, 5000);
+}
+stage.addEventListener('mousedown',resetIdle);
+stage.addEventListener('touchstart',resetIdle,{passive:true});
+
+function autoRotate(){
+  if(autoRot && mode==='3d' && !document.getElementById('ov').classList.contains('open')){
+    rotY+=0.12;
+    applyTransform();
+  }
+  requestAnimationFrame(autoRotate);
+}
+requestAnimationFrame(autoRotate);
+</script>
+</body>
+</html>

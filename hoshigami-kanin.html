@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>星神の封印</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Shippori+Mincho+B1:wght@700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{background:#0a0704;}
+body{
+  font-family:'Noto Serif JP',serif;
+  color:#f0e2c8;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── 星空 ── */
+#starfield{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.star{position:absolute;border-radius:50%;background:white;}
+@keyframes tw{0%,100%{opacity:.2;}50%{opacity:.9;}}
+#megastar{
+  position:fixed;top:5%;left:50%;transform:translateX(-50%);
+  width:12px;height:12px;border-radius:50%;
+  background:#e8b84b;
+  box-shadow:0 0 24px 8px rgba(232,184,75,.8),0 0 50px 16px rgba(232,184,75,.3);
+  z-index:2;cursor:pointer;
+  animation:mpulse 2.5s ease-in-out infinite;
+}
+@keyframes mpulse{0%,100%{box-shadow:0 0 24px 8px rgba(232,184,75,.8),0 0 50px 16px rgba(232,184,75,.3);}
+50%{box-shadow:0 0 36px 14px rgba(232,184,75,1),0 0 70px 24px rgba(232,184,75,.5);}}
+
+/* ── HEADER ── */
+header{
+  position:relative;z-index:10;
+  text-align:center;padding:3.5rem 1rem 1.8rem;
+  border-bottom:3px solid #c9922a;
+}
+header h1{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:clamp(1.8rem,6vw,2.8rem);
+  letter-spacing:.15em;color:#f0d060;
+}
+header .sub{font-size:.9rem;letter-spacing:.25em;color:#c9922a;margin-top:.6rem;}
+.tap-hint{
+  display:inline-block;margin-top:.9rem;
+  font-size:.82rem;color:#f0e2c8;
+  background:#1e1408;border:2px solid #c9922a;
+  padding:.4rem 1.1rem;border-radius:4px;letter-spacing:.05em;
+}
+
+/* ── MAIN LAYOUT ── */
+.wrap{position:relative;z-index:10;max-width:900px;margin:0 auto;padding:1.5rem 1rem 4rem;}
+
+/* ── 時代ラベル ── */
+.era{
+  display:flex;align-items:center;gap:.8rem;margin:2.2rem 0 1rem;
+}
+.era span{
+  font-size:.82rem;font-weight:700;letter-spacing:.25em;
+  color:#e8c870;white-space:nowrap;
+}
+.era::before,.era::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,transparent,#c9922a);}
+.era::after{background:linear-gradient(90deg,#c9922a,transparent);}
+
+/* ── NODE ── */
+.node{
+  border-radius:8px;padding:1.1rem 1.2rem;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease;
+  user-select:none;position:relative;
+}
+.node:active{transform:scale(.96);}
+.node:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.7);}
+
+.node-icon{font-size:1.5rem;margin-bottom:.35rem;}
+.node-name{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:1.12rem;font-weight:700;letter-spacing:.08em;
+  margin-bottom:.4rem;line-height:1.3;
+}
+.node-brief{font-size:.84rem;line-height:1.75;color:#d0c0a8;}
+.tap-badge{
+  position:absolute;top:.65rem;right:.8rem;
+  font-size:.65rem;color:#c9922a;font-weight:700;letter-spacing:.05em;
+}
+
+/* カテゴリ色 — 完全不透明 */
+.c-star{background:#221808;border:3px solid #e8b84b;}
+.c-star .node-name{color:#f0d060;}
+
+.c-deity{background:#1a1506;border:2px solid #c9922a;}
+.c-deity .node-name{color:#f0c84a;}
+
+.c-clan{background:#0e1a28;border:2px solid #7a9ab8;}
+.c-clan .node-name{color:#9ac4e8;}
+
+.c-hero{background:#2a0808;border:2px solid #d44;}
+.c-hero .node-name{color:#ff8888;}
+
+.c-shogun{background:#082818;border:2px solid #3a9e62;}
+.c-shogun .node-name{color:#5de89a;}
+
+.c-crow{background:#180820;border:2px dashed #9a6ab8;}
+.c-crow .node-name{color:#c898e8;}
+
+.c-place{background:#161006;border:2px dashed #8a6a28;}
+.c-place .node-name{color:#e8c870;font-size:1rem;}
+
+/* タグ */
+.tag{
+  display:inline-block;font-size:.65rem;padding:.2rem .55rem;
+  border-radius:3px;margin-top:.5rem;letter-spacing:.06em;font-weight:700;
+}
+.c-star .tag{background:#3a2a08;color:#f0d060;border:1px solid #c9922a;}
+.c-deity .tag{background:#2a1e06;color:#f0c84a;border:1px solid #c9922a;}
+.c-clan .tag{background:#0e1e30;color:#9ac4e8;border:1px solid #7a9ab8;}
+.c-hero .tag{background:#3a0a0a;color:#ff8888;border:1px solid #d44;}
+.c-shogun .tag{background:#0a3018;color:#5de89a;border:1px solid #3a9e62;}
+.c-crow .tag{background:#280838;color:#c898e8;border:1px solid #9a6ab8;}
+.c-place .tag{background:#221608;color:#e8c870;border:1px solid #8a6a28;}
+
+/* グリッド */
+.g1{display:flex;justify-content:center;}
+.g1 .node{width:min(460px,100%);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-top:.9rem;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-top:.8rem;}
+@media(max-width:500px){
+  .g2{grid-template-columns:1fr;}
+  .g3{grid-template-columns:1fr 1fr;}
+}
+
+/* 矢印・コネクター */
+.arrow{text-align:center;font-size:2.2rem;color:#c9922a;margin:.2rem 0;line-height:1;}
+.conn{
+  display:flex;align-items:center;justify-content:center;gap:.6rem;
+  padding:.5rem 0;
+}
+.cline{flex:1;max-width:100px;height:2px;background:linear-gradient(90deg,transparent,#c9922a);}
+.cline.r{background:linear-gradient(90deg,#c9922a,transparent);}
+.ctxt{font-size:.82rem;font-weight:700;color:#e8c870;text-align:center;max-width:300px;line-height:1.6;}
+
+/* まとめ */
+.keystone{
+  margin-top:2.2rem;padding:1.5rem;
+  background:#1a1006;border:2px solid #c9922a;border-radius:8px;text-align:center;
+}
+.keystone h3{font-family:'Shippori Mincho B1',serif;font-size:1rem;color:#f0d060;letter-spacing:.2em;margin-bottom:.9rem;}
+.keystone p{font-size:.88rem;line-height:2.1;color:#d0c0a8;}
+.keystone em{color:#f0d060;font-style:normal;font-weight:700;}
+
+/* 見逃しポイント */
+.missed{margin-top:2rem;background:#1c0d0d;border:2px solid #d44;border-radius:8px;padding:1.3rem 1.4rem;}
+.missed h3{font-size:.85rem;color:#ff8080;font-weight:700;margin-bottom:1rem;letter-spacing:.1em;}
+.mitem{
+  display:flex;gap:.8rem;padding:.75rem .3rem;
+  border-bottom:1px solid #2a1010;cursor:pointer;
+  transition:background .15s;border-radius:4px;
+}
+.mitem:last-child{border-bottom:none;}
+.mitem:hover{background:#2a1010;}
+.mnum{font-size:1.15rem;color:#e8b84b;min-width:1.6rem;font-weight:700;}
+.mbody{font-size:.86rem;line-height:1.8;color:#e0d0b8;}
+.mbody strong{color:#fff;}
+
+/* 凡例 */
+.legend{
+  display:flex;flex-wrap:wrap;gap:.8rem;justify-content:center;
+  margin-top:2rem;padding-top:1.3rem;border-top:2px solid #2a1e08;
+}
+.leg{display:flex;align-items:center;gap:.4rem;font-size:.7rem;color:#c8b89a;}
+.ldot{width:14px;height:14px;border-radius:3px;}
+
+footer{
+  position:relative;z-index:10;text-align:center;
+  padding:1.2rem;font-size:.65rem;color:#6a5a42;
+  letter-spacing:.1em;border-top:1px solid #2a1e08;
+}
+
+/* ════ MODAL ════ */
+#ov{
+  display:none;position:fixed;inset:0;
+  background:rgba(4,2,1,.92);backdrop-filter:blur(8px);
+  z-index:1000;align-items:center;justify-content:center;padding:1rem;
+}
+#ov.open{display:flex;}
+#modal{
+  background:#150f05;border:3px solid #c9922a;border-radius:10px;
+  max-width:560px;width:100%;max-height:88vh;overflow-y:auto;
+  padding:1.8rem 1.5rem;position:relative;
+  animation:sup .25s ease;
+}
+@keyframes sup{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+#mcl{
+  position:absolute;top:.9rem;right:1.1rem;
+  font-size:1.5rem;color:#a08060;cursor:pointer;background:none;border:none;
+}
+#mcl:hover{color:#f0e2c8;}
+#micon{font-size:2.5rem;margin-bottom:.5rem;}
+#mtitle{font-size:1.35rem;font-weight:700;letter-spacing:.1em;color:#e8b84b;margin-bottom:.25rem;}
+#msub{font-size:.78rem;color:#c9922a;letter-spacing:.08em;margin-bottom:1.1rem;}
+.ms{margin-bottom:1.1rem;}
+.mst{font-size:.75rem;font-weight:700;letter-spacing:.2em;color:#c9922a;margin-bottom:.4rem;padding-bottom:.3rem;border-bottom:1px solid #3a2a0a;}
+.msb{font-size:.86rem;line-height:1.95;color:#c8b89a;}
+.msb strong{color:#f0e2c8;}
+.msb em{color:#e8b84b;font-style:normal;}
+.mlinks{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.1rem;}
+.mlbtn{
+  font-size:.7rem;padding:.35rem .8rem;
+  background:#2a1e08;border:1px solid #c9922a;border-radius:4px;
+  color:#e8b84b;cursor:pointer;letter-spacing:.06em;transition:background .15s;
+}
+.mlbtn:hover{background:#3a2a0a;}
+</style>
+</head>
+<body>
+
+<div id="starfield"></div>
+<div id="megastar" onclick="open_('amatsumikaboshi')"></div>
+
+<header>
+  <h1>星神の封印</h1>
+  <div class="sub">常陸覇権と東国の磁場 ── 相関図</div>
+  <div class="tap-hint">👆 各カードをタップすると詳細が開きます</div>
+</header>
+
+<div class="wrap">
+
+<!-- ══ 神話層 ══ -->
+<div class="era"><span>神 話 層 ── 星と封印の起源</span></div>
+
+<div class="g1">
+  <div class="node c-star" onclick="open_('amatsumikaboshi')">
+    <div class="tap-badge">タップで詳細 ▶</div>
+    <div class="node-icon">⭐</div>
+    <div class="node-name">アマツミカボシ（天津甕星）</div>
+    <div class="node-brief">別名・天香香背男。国譲りで最後まで抵抗したまつろわぬ星神。常陸・大甕山の宿魂石に封印。北極星・金星のイメージ。東国すべての磁場の中心。</div>
+    <span class="tag">星神 ／ 悪神 ／ 封印の核</span>
+  </div>
+</div>
+
+<div class="arrow">↓</div>
+<div class="conn"><div class="cline"></div><div class="ctxt">誅伐・封印を担った三柱の神</div><div class="cline r"></div></div>
+<div class="arrow">↓</div>
+
+<div class="g3">
+  <div class="node c-deity" onclick="open_('futsunushi')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">⚡</div>
+    <div class="node-name">経津主神（フツヌシ）</div>
+    <div class="node-brief">物部系の剣神。香取神宮・要石で東国封印。</div>
+    <span class="tag">物部系 ／ 香取</span>
+  </div>
+  <div class="node c-deity" onclick="open_('takemikazuchi')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">⚡</div>
+    <div class="node-name">武甕槌神（タケミカヅチ）</div>
+    <div class="node-brief">藤原系の雷神。鹿島神宮・要石で大地を封印。</div>
+    <span class="tag">藤原系 ／ 鹿島</span>
+  </div>
+  <div class="node c-deity" onclick="open_('omika')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">🗿</div>
+    <div class="node-name">建葉槌命</div>
+    <div class="node-brief">倭文氏の祖神。大甕山の宿魂石にアマツミカボシを封印した番人。</div>
+    <span class="tag">常陸 ／ 宿魂石</span>
+  </div>
+</div>
+
+<div class="conn" style="margin-top:1rem;"><div class="cline"></div><div class="ctxt">▲ 三箇所に「要石」が存在する ── 鹿島・香取・大甕</div><div class="cline r"></div></div>
+
+<!-- ══ 天皇家・ヤタガラス ══ -->
+<div class="era"><span>天 皇 家 東 征 ── 神武と八咫烏</span></div>
+
+<div class="g2">
+  <div class="node c-crow" onclick="open_('yatagarasu')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">🐦‍⬛</div>
+    <div class="node-name">八咫烏（ヤタガラス）</div>
+    <div class="node-brief">神武天皇を熊野から大和へ導いた三本足の烏。賀茂氏・秦氏との関係。アマツミカボシとの暗の対比。</div>
+    <span class="tag">天皇家東征 ／ 道案内</span>
+  </div>
+  <div class="node c-clan" onclick="open_('fujiwara')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">🏛</div>
+    <div class="node-name">藤原氏（中臣氏）</div>
+    <div class="node-brief">中臣鎌足→藤原不比等。タケミカヅチ・鹿島を奉じ朝廷支配を確立。東国豪族へ委任統治。</div>
+    <span class="tag">中央権力 ／ 摂関政治</span>
+  </div>
+</div>
+
+<!-- ══ 古代氏族層 ══ -->
+<div class="era"><span>古 代 氏 族 層 ── 軍事と鎮魂の二軸</span></div>
+
+<div class="g2">
+  <div class="node c-clan" onclick="open_('mononobe')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">🏛</div>
+    <div class="node-name">物部氏</div>
+    <div class="node-brief">祖：宇摩志麻遅命。十種神宝・鎮魂法「布瑠部ゆらゆら」を伝える。587年中央で滅亡→残党が東国へ逃亡説。石見・物部神社が本拠。</div>
+    <span class="tag">軍事・鎮魂 ／ 石見〜東国</span>
+  </div>
+  <div class="node c-clan" onclick="open_('chiba')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">🏹</div>
+    <div class="node-name">千葉氏</div>
+    <div class="node-brief">桓武平氏系。下総・常陸を支配。妙見菩薩（北極星・北斗七星）を氏神に信仰。将門と同族。星神エネルギーを守護神化した構造。</div>
+    <span class="tag">下総・常陸 ／ 妙見信仰</span>
+  </div>
+</div>
+
+<!-- ══ 中世層 ══ -->
+<div class="era"><span>中 世 層 ── 東国の反乱と怨霊</span></div>
+
+<div class="g1">
+  <div class="node c-hero" onclick="open_('masakado')">
+    <div class="tap-badge">タップで詳細 ▶</div>
+    <div class="node-icon">⚔</div>
+    <div class="node-name">平将門</div>
+    <div class="node-brief">桓武平氏。常陸〜下総を制圧し「新皇」を自称。940年討伐。首塚・怨霊は東京大手町に現存。北斗七星化身説あり。神田明神で守護神に転用→明治に除外→戦後復位。</div>
+    <span class="tag">935〜940年 ／ 常陸・下総 ／ まつろわぬ怨霊</span>
+  </div>
+</div>
+
+<div class="conn" style="margin-top:.8rem;"><div class="cline"></div><div class="ctxt">将門＝北斗七星化身説 → 千葉氏の妙見（北斗）信仰と直結 → アマツミカボシ（星神）と習合</div><div class="cline r"></div></div>
+
+<!-- ══ 近世層 ══ -->
+<div class="era"><span>近 世 層 ── 江戸という最終封印装置</span></div>
+
+<div class="g1">
+  <div class="node c-shogun" onclick="open_('ieyasu')">
+    <div class="tap-badge">タップで詳細 ▶</div>
+    <div class="node-icon">🏯</div>
+    <div class="node-name">徳川家康</div>
+    <div class="node-brief">江戸入府1590年。将門首塚を鬼門方向に配置・守護神転用。日光東照宮を江戸城から真北（北極星方向）に配置。鹿島・香取を東の守護軸に。全ての封印を統合した最終設計者。</div>
+    <span class="tag">1590〜 ／ 江戸設計 ／ 全封印の統合</span>
+  </div>
+</div>
+
+<!-- ══ 地霊層 ══ -->
+<div class="era"><span>地 霊 層 ── 封印装置としての聖地</span></div>
+
+<div class="g3">
+  <div class="node c-place" onclick="open_('omika_j')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">🪨</div>
+    <div class="node-name">大甕神社</div>
+    <div class="node-brief">宿魂石の上に社殿。茨城・日立市。封印の原点。</div>
+    <span class="tag">常陸 ／ 宿魂石</span>
+  </div>
+  <div class="node c-place" onclick="open_('kashima')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">⛩</div>
+    <div class="node-name">鹿島・香取神宮</div>
+    <div class="node-brief">各々に要石。藤原系・物部系の東国霊的軸線。</div>
+    <span class="tag">要石 ／ 二大封印宮</span>
+  </div>
+  <div class="node c-place" onclick="open_('kanda')">
+    <div class="tap-badge">▶</div>
+    <div class="node-icon">👁</div>
+    <div class="node-name">将門首塚・神田明神</div>
+    <div class="node-brief">怨霊→江戸鎮護に転用。明治に除外・戦後復位。</div>
+    <span class="tag">江戸 ／ 転用封印</span>
+  </div>
+</div>
+
+<!-- ══ まとめ ══ -->
+<div class="keystone">
+  <h3>── 全体を貫く一本の線 ──</h3>
+  <p>
+    <em>「まつろわぬ星のエネルギーを、封印 → 取り込み → 権力の礎へ」</em><br>
+    このパターンが神話から江戸まで同じ構造で繰り返される。<br><br>
+    神武東征（ヤタガラスの道案内）→ 星神封印（大甕・宿魂石）→ 古代二軸（物部vs藤原）<br>
+    → 中世（将門の乱・千葉氏妙見）→ 近世（家康の江戸最終封印）<br><br>
+    <em>常陸国はその磁場の中心。</em><br>
+    物部神社の鎮魂法（布瑠部ゆらゆら）は<em>その最も古い技術的記憶</em>。
+  </p>
+</div>
+
+<!-- ══ 見逃しポイント ══ -->
+<div class="missed">
+  <h3>▲ 見逃しがちな重要ポイント（タップで詳細）</h3>
+  <div class="mitem" onclick="open_('yoreishi')">
+    <div class="mnum">①</div>
+    <div class="mbody"><strong>要石が三箇所ある</strong> ── 鹿島・香取・大甕それぞれに封印の石が存在する</div>
+  </div>
+  <div class="mitem" onclick="open_('nikko')">
+    <div class="mnum">②</div>
+    <div class="mbody"><strong>日光東照宮の真北問題</strong> ── 江戸城から真北に家康の廟。北極星を「上から押さえる」配置</div>
+  </div>
+  <div class="mitem" onclick="open_('masakado_hoshi')">
+    <div class="mnum">③</div>
+    <div class="mbody"><strong>将門＝北斗七星の化身説</strong> ── 影武者七人が倒され本体だけ残った伝承</div>
+  </div>
+  <div class="mitem" onclick="open_('mononobe_east')">
+    <div class="mnum">④</div>
+    <div class="mbody"><strong>物部残党の東国逃亡説</strong> ── 587年滅亡後、鎮魂法を携えて常陸・下総へ</div>
+  </div>
+  <div class="mitem" onclick="open_('kanda_meiji')">
+    <div class="mnum">⑤</div>
+    <div class="mbody"><strong>明治政府が将門を神田明神から消した</strong> ── 1874年除外・戦後1984年復位</div>
+  </div>
+  <div class="mitem" onclick="open_('yatagarasu_deep')">
+    <div class="mnum">⑥</div>
+    <div class="mbody"><strong>八咫烏とアマツミカボシの対比構造</strong> ── 光の道案内 vs 闇の抵抗、天皇家と星神の深層</div>
+  </div>
+</div>
+
+<!-- 凡例 -->
+<div class="legend">
+  <div class="leg"><div class="ldot" style="background:#3a2a08;border:2px solid #e8b84b;"></div>星神・核</div>
+  <div class="leg"><div class="ldot" style="background:#2a1e06;border:2px solid #c9922a;"></div>神話・神格</div>
+  <div class="leg"><div class="ldot" style="background:#0e1a28;border:2px solid #7a9ab8;"></div>氏族・権力</div>
+  <div class="leg"><div class="ldot" style="background:#2a0808;border:2px solid #d44;"></div>英雄・怨霊</div>
+  <div class="leg"><div class="ldot" style="background:#082818;border:2px solid #3a9e62;"></div>幕府・近世</div>
+  <div class="leg"><div class="ldot" style="background:#180820;border:2px dashed #9a6ab8;"></div>天皇家・烏</div>
+  <div class="leg"><div class="ldot" style="background:#161006;border:2px dashed #8a6a28;"></div>聖地・封印場</div>
+</div>
+
+</div><!-- end wrap -->
+
+<footer>星神の封印 ── 常陸覇権と東国の磁場 相関図 ／ タップで詳細パネルが開きます</footer>
+
+<!-- ════ MODAL ════ -->
+<div id="ov" onclick="closeOv(event)">
+<div id="modal">
+  <button id="mcl" onclick="closeModal()">✕</button>
+  <div id="micon"></div>
+  <div id="mtitle"></div>
+  <div id="msub"></div>
+  <div id="mcont"></div>
+  <div id="mlinks" class="mlinks"></div>
+</div>
+</div>
+
+<script>
+// ── 星空生成 ──
+const sf=document.getElementById('starfield');
+for(let i=0;i<160;i++){
+  const s=document.createElement('div');s.className='star';
+  const sz=Math.random()*2.2+.4;
+  s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation:tw ${2+Math.random()*4}s ease-in-out ${-Math.random()*5}s infinite;`;
+  sf.appendChild(s);
+}
+
+// ── データ ──
+const D={
+  amatsumikaboshi:{
+    icon:'⭐',title:'アマツミカボシ（天津甕星）',sub:'別名：天香香背男（あまのかかせお）',
+    secs:[
+      {t:'神話上の正体',b:'日本書紀の一書に登場する<strong>星の神</strong>。国譲り神話で葦原中国平定に最後まで抵抗した「まつろわぬ神」の象徴。経津主神・武甕槌神が派遣される前に「天に悪神あり」と言われた存在。'},
+      {t:'常陸・宿魂石への封印',b:'常陸国（茨城）の<strong>大甕山</strong>に逃れ、巨岩に化して抵抗。建葉槌命に倒され、その岩（宿魂石）に魂が封印された。大甕神社（日立市）がその封印の場所。社殿が巨岩の上に建つ。'},
+      {t:'北極星・金星との関係',b:'<em>北極星・金星（明けの明星）</em>のイメージを持つ。妙見菩薩（北極星信仰）との習合も指摘される。千葉氏の妙見信仰、将門の「北斗七星化身説」も、このエネルギーを取り込む構造。'},
+      {t:'物部鎮魂法との接点',b:'物部氏の鎮魂法「布瑠部ゆらゆら」は<strong>魂の境界・生死の境</strong>を操作する技法。アマツミカボシが象徴する「封印された星のエネルギー」と正面から向き合う儀式。深く実践すると星神のエネルギーが反応するとされる所以。'},
+      {t:'八咫烏との対比',b:'ヤタガラスが<em>「光の道案内・天皇家の守護」</em>であるなら、アマツミカボシは<em>「闇の抵抗・封印された星」</em>。天皇家の東征（ヤタガラス）と星神封印（建葉槌命）は表裏一体の構造。'},
+    ],
+    links:['futsunushi','takemikazuchi','omika','yatagarasu','mononobe']
+  },
+  yatagarasu:{
+    icon:'🐦‍⬛',title:'八咫烏（ヤタガラス）',sub:'三本足の烏 ／ 神武天皇の道案内 ／ 天皇家東征の象徴',
+    secs:[
+      {t:'神話上の役割',b:'神武天皇が熊野から大和へ東征する際に天照大神から遣わされた三本足の烏。険しい山道を<strong>道案内</strong>した。「八咫」は非常に大きいという意味。'},
+      {t:'三本足の意味',b:'三本足は<em>太陽の象徴（三足烏）</em>として中国・朝鮮にも共通する神話的存在。日本では賀茂氏（上賀茂・下鴨神社）の祖・賀茂建角身命がヤタガラスに化したとされる。秦氏との関連も指摘される。'},
+      {t:'アマツミカボシとの対比構造',b:'アマツミカボシ＝<em>まつろわぬ星（闇・抵抗・封印）</em>に対し、ヤタガラス＝<em>光の烏（道案内・天皇家守護）</em>という対比構造がある。神武東征（ヤタガラス）と星神封印（大甕山）は同じ「天皇家による国土統一」の表と裏。'},
+      {t:'現代での象徴',b:'日本サッカー協会のシンボルとして有名。また、熊野本宮大社（和歌山）の神紋にもなっている。賀茂氏・秦氏→京都の基礎を作った渡来系氏族との関係から、<strong>物部氏・藤原氏と並ぶ第三の古代氏族軸</strong>とも見られる。'},
+    ],
+    links:['amatsumikaboshi','yatagarasu_deep','fujiwara']
+  },
+  yatagarasu_deep:{
+    icon:'🌑',title:'八咫烏とアマツミカボシの対比構造',sub:'光と闇の星神論 ── 天皇家東征と封印の表裏',
+    secs:[
+      {t:'光の烏 vs 闇の星神',b:'ヤタガラス（太陽・光・道案内）とアマツミカボシ（星・闇・抵抗）は<strong>天皇家の国土統一</strong>における表と裏の存在。ヤタガラスが「天皇の権力を支える光」なら、アマツミカボシは「封印しなければならない抵抗のエネルギー」。'},
+      {t:'神武東征と星神封印の同時性',b:'神武天皇の東征（ヤタガラスの案内）と、常陸・大甕山への星神封印（建葉槌命）は同じ「天津神による葦原中国平定」の物語の一部。東から封じ（大甕）、西から進む（神武）という構造。'},
+      {t:'賀茂氏・秦氏と物部氏の軸',b:'ヤタガラス＝賀茂氏・秦氏（京都を開いた渡来系）。アマツミカボシ封印＝物部・倭文氏（東国の在来系軍事氏族）。<em>この対立軸が日本古代史の深層</em>にある。'},
+      {t:'将門と天皇家の反復',b:'将門の乱は「東国のまつろわぬ力（アマツミカボシの反復）」が天皇家（ヤタガラスの子孫）に反乱した出来事とも読める。その討伐・封印→守護神化のパターンは神武東征以来の構造の繰り返し。'},
+    ],
+    links:['amatsumikaboshi','yatagarasu','masakado','ieyasu']
+  },
+  futsunushi:{
+    icon:'⚡',title:'経津主神（フツヌシ）',sub:'香取神宮の御祭神 ／ 物部系の剣神',
+    secs:[
+      {t:'神格',b:'「フツ」は剣の切れ味の擬音。<strong>韴霊剣（ふつのみたま）</strong>の神格化。物部氏が奉じた軍事・祭祀の神。国譲り神話でタケミカヅチとともに葦原中国平定に赴く。'},
+      {t:'香取神宮と要石',b:'千葉県香取市の<strong>香取神宮</strong>に鎮座。境内に<em>要石</em>がある。鹿島の要石と対になって「大鯰の頭と尾を押さえる」とされる封印装置。'},
+      {t:'物部氏との関係',b:'物部の始祖が天下った際に携えた<strong>十種神宝</strong>の中の韴霊剣がフツノミタマ（経津主神の本体）。物部氏が587年に中央で滅びても、香取神宮の神統は残り続けた。'},
+    ],
+    links:['amatsumikaboshi','mononobe','kashima','yoreishi']
+  },
+  takemikazuchi:{
+    icon:'⚡',title:'武甕槌神（タケミカヅチ）',sub:'鹿島神宮の御祭神 ／ 藤原系の雷神',
+    secs:[
+      {t:'神格',b:'雷神・剣神。国譲り神話の主役。藤原氏（中臣氏）の守護神として中央権力の象徴となった。'},
+      {t:'鹿島神宮と要石',b:'茨城県鹿嶋市の<strong>鹿島神宮</strong>に鎮座。境内に<em>要石</em>。「地中で大鯰の頭を押さえている」とされる。江戸時代に引き抜こうとしたが底がなく断念した記録がある。'},
+      {t:'藤原氏との関係',b:'中臣鎌足が645年に大化改新を主導した際、鹿島のタケミカヅチが背景にある。<strong>「武の物部・政の藤原」</strong>という東国支配の二軸が香取・鹿島として地理的に表現されている。'},
+    ],
+    links:['amatsumikaboshi','fujiwara','kashima','yoreishi']
+  },
+  omika:{
+    icon:'🗿',title:'建葉槌命（タケハツチ）',sub:'倭文（しどり）氏の祖神 ／ 大甕山の封印神',
+    secs:[
+      {t:'神格',b:'機織り・呪術関連の部民「倭文氏」の祖神。アマツミカボシを岩ごと封印した「境界の番人」。物部氏の東国進出ルートとも重なる存在。'},
+      {t:'大甕神社（茨城県日立市）',b:'社殿が<strong>宿魂石という巨岩の上に直接建つ</strong>という極めて珍しい構造。民間伝承では金の靴で巨岩を蹴り砕いたという話も残る。'},
+      {t:'宿魂石の呪術的意味',b:'「宿魂」＝魂を宿す石。物部の鎮魂法が「振動で魂を体に戻す」のとは逆に、石が「魂を閉じ込める」という封印技法。<em>封印石と鎮魂法は同じ「魂の境界」を扱う表裏一体の技術</em>。'},
+    ],
+    links:['amatsumikaboshi','omika_j','mononobe']
+  },
+  mononobe:{
+    icon:'🏛',title:'物部氏',sub:'軍事・鎮魂・死者蘇生の秘法を担う古代氏族',
+    secs:[
+      {t:'祖神と本拠',b:'祖神：<strong>宇摩志麻遅命（うましまじのみこと）</strong>、父・饒速日命（ニギハヤヒ）。石見国一宮・物部神社（島根県大田市）が中心。'},
+      {t:'十種神宝と鎮魂法',b:'十種神宝を振りながら唱える：<em>「一二三四五六七八九十、布瑠部（ふるべ）、由良由良止（ゆらゆらと）布瑠部」</em>。先代旧事本紀：「死れる人は返りて生きなむ」。死者蘇生の秘儀。'},
+      {t:'587年滅亡と東国逃亡説',b:'<strong>物部守屋 vs 蘇我馬子・聖徳太子</strong>で敗北。一部が東国（常陸・下総）に落ち延び在地豪族と融合したという説がある。鎮魂法が東国に残った経路かもしれない。'},
+      {t:'フツノミタマと香取',b:'物部が奉じたフツノミタマ（韴霊剣）が経津主神として香取神宮に鎮座。物部が中央で滅びても霊的軸線は東国の神宮として生き続けた。'},
+    ],
+    links:['amatsumikaboshi','futsunushi','omika','mononobe_east']
+  },
+  fujiwara:{
+    icon:'🏛',title:'藤原氏（中臣氏）',sub:'朝廷支配を確立した中央権力氏族',
+    secs:[
+      {t:'成立',b:'中臣鎌足が645年の大化改新で台頭。子・藤原不比等が律令体制整備。武甕槌神（鹿島）を奉じ摂関政治で権力を独占。'},
+      {t:'物部氏との対立',b:'587年に物部守屋を滅ぼした蘇我氏の後継として台頭。「武の物部（フツノミタマ）」vs「政の藤原（タケミカヅチ）」という東国支配の二軸。'},
+      {t:'将門討伐と東国委任',b:'将門の乱を<strong>藤原秀郷（俵藤太）</strong>と平貞盛が討伐。東国豪族（千葉氏など）への委任統治構造が中世まで続く。'},
+    ],
+    links:['takemikazuchi','masakado','chiba','kashima']
+  },
+  chiba:{
+    icon:'🏹',title:'千葉氏',sub:'下総・常陸支配の東国豪族 ／ 妙見信仰の担い手',
+    secs:[
+      {t:'出自',b:'桓武平氏の流れ。将門と同じ平氏の血筋。将門の乱では朝廷側についたが同族の記憶は残る。下総国千葉庄を本拠に常陸・上総方面を実効支配。'},
+      {t:'妙見菩薩信仰',b:'氏神として<em>妙見菩薩（北極星・北斗七星の神格）</em>を信仰。アマツミカボシ（天の星神・北極星イメージ）との習合・重ね合わせが構造的に起きる。'},
+      {t:'星神取り込みの構造',b:'封印された星神（アマツミカボシ）を妙見として守護神に取り込み。将門（北斗七星化身）を同族として内包する。<em>「まつろわぬ星のエネルギーを氏族の守護に変換」</em>という構造の完成形。'},
+    ],
+    links:['amatsumikaboshi','masakado','masakado_hoshi','omika_j']
+  },
+  masakado:{
+    icon:'⚔',title:'平将門',sub:'東国の覇者 ／ まつろわぬ怨霊の代名詞',
+    secs:[
+      {t:'生涯と乱',b:'桓武平氏。935〜940年に常陸〜関東を制圧。<em>「新皇」</em>を自称。藤原秀郷・平貞盛に討伐され落命。'},
+      {t:'北斗七星化身説',b:'七人の影武者が次々倒され本体だけ残ったという伝承。「北斗七星のうち六星が消えて一星残った」と読む民間解釈。千葉氏の<em>妙見（北斗）</em>信仰と直結。'},
+      {t:'首塚と怨霊',b:'首は京都まで飛んだ後に武蔵国へ落下。<strong>大手町の将門首塚</strong>は現在も東京に存在し、移転しようとすると不幸が続くとされ手がつけられない。'},
+      {t:'神田明神と家康',b:'神田明神（千代田区）の祭神として祀られ家康が江戸城の<strong>鬼門方向に配置</strong>し江戸鎮護に転用。怨霊→守護神という逆転は、アマツミカボシ封印と同型の構造。'},
+      {t:'明治の消去と戦後復位',b:'1874年、明治政府が将門を祭神から外した。理由：天皇に反逆した将門が明治天皇制に不適切。1984年に正式復位。<em>まつろわぬエネルギーは近代まで政治的に危険視された。</em>'},
+    ],
+    links:['chiba','fujiwara','kanda','masakado_hoshi','ieyasu']
+  },
+  ieyasu:{
+    icon:'🏯',title:'徳川家康',sub:'江戸という最終封印装置の設計者',
+    secs:[
+      {t:'江戸入府と霊的都市設計',b:'1590年に江戸入府。風水・陰陽道的な霊的設計を都市の骨格に組み込んだ。'},
+      {t:'将門怨霊の転用',b:'神田明神（将門の怨霊）を<strong>江戸城の鬼門（東北）方向</strong>に置き、怨霊の力を逆用して江戸を守護させる。「最大の怨霊を最強の守護神に転用」という逆転の発想。'},
+      {t:'日光東照宮の真北配置',b:'家康の廟所・日光東照宮は江戸城から<em>ほぼ真北</em>に位置する。北極星（アマツミカボシが象徴する天の中心）を「上から封じる」配置。将門首塚→神田明神→江戸城→日光という<em>南北の霊的軸線</em>が成立。'},
+      {t:'鹿島・香取の統合',b:'鹿島（タケミカヅチ＝藤原系）と香取（フツヌシ＝物部系）を利根川水系で繋ぎ東の守護軸に。物部・藤原という古代二大勢力を同時に取り込んだ。'},
+      {t:'封印の完成',b:'①将門怨霊転用、②鹿島・香取東守護軸、③日光真北封印、④千葉氏妙見圏吸収。<em>「まつろわぬ星のエネルギーを封じて権力の礎にする」パターンの集大成。</em>'},
+    ],
+    links:['masakado','kanda','kashima','nikko']
+  },
+  omika_j:{
+    icon:'🪨',title:'大甕神社（おおみかじんじゃ）',sub:'茨城県日立市 ／ 宿魂石の封印地',
+    secs:[
+      {t:'場所と特徴',b:'常磐線・大甕駅から徒歩圏内。社殿が<strong>宿魂石という巨岩の上に直接建つ</strong>極めて珍しい構造。'},
+      {t:'宿魂石',b:'アマツミカボシの魂が封印された巨岩。「魂を宿す石」の意。物部の鎮魂法（魂を振動で体に戻す）と逆の技法で、石が「魂を閉じ込める」。封印石と鎮魂法は同じ「魂の境界」を扱う表裏一体の技術。'},
+      {t:'民間伝承',b:'建葉槌命が金の靴で巨岩を蹴り砕いたという話が地元に残る。砕けた形が境内に現存するとされる。'},
+    ],
+    links:['amatsumikaboshi','omika','chiba','yoreishi']
+  },
+  kashima:{
+    icon:'⛩',title:'鹿島神宮・香取神宮',sub:'東国の二大封印神宮 ／ 要石の存在',
+    secs:[
+      {t:'位置関係',b:'<strong>鹿島神宮</strong>（茨城・鹿嶋市）：タケミカヅチ＝藤原系。<strong>香取神宮</strong>（千葉・香取市）：フツヌシ＝物部系。利根川を挟んで向かい合い、東国支配の霊的二軸を形成。'},
+      {t:'要石',b:'両神宮にそれぞれ<em>要石</em>がある。地中深くにめり込んだ小さな石で「大鯰の頭（鹿島）と尾（香取）を押さえている」とされる地震封じ＝地の精封印装置。大甕の宿魂石と合わせて三箇所の封印石。'},
+      {t:'家康の利用',b:'家康が江戸入府後、鹿島・香取を東方の守護軸に組み込んだ。物部（香取）・藤原（鹿島）という古代対立を統合する形で東国霊的支配を完成。'},
+    ],
+    links:['futsunushi','takemikazuchi','ieyasu','yoreishi']
+  },
+  kanda:{
+    icon:'👁',title:'将門首塚・神田明神',sub:'大手町の怨霊封印 ／ 政治に翻弄された近代の祭神問題',
+    secs:[
+      {t:'将門首塚（大手町）',b:'東京都千代田区大手町。高層ビルの谷間に突然現れる石造りの塚。移転・撤去しようとするたびに関係者に不幸・事故が続いたとされ現在も動かされていない。<em>東京のど真ん中に残る最大の怨霊封印。</em>'},
+      {t:'神田明神',b:'将門を祭神として祀る。家康が江戸城の<strong>鬼門（東北）方向に配置</strong>し怨霊の力を江戸守護に転用。現在も江戸東京の総鎮守として信仰される。'},
+      {t:'明治の消去（1874年）',b:'明治政府が将門を祭神から外した。理由：天皇に反逆した将門が天皇制国家に不適切。大己貴命を主祭神に昇格。将門は末席に格下げ。'},
+      {t:'戦後復位（1984年）',b:'昭和59年に将門が正式に主祭神の一柱として復位。約110年ぶりの公式承認。<em>まつろわぬエネルギーは完全には封印できなかった。</em>'},
+    ],
+    links:['masakado','ieyasu','kanda_meiji']
+  },
+  yoreishi:{
+    icon:'🗿',title:'三つの要石 ── 見逃しがちな封印装置',sub:'鹿島・香取・大甕それぞれに「封印の石」',
+    secs:[
+      {t:'なぜ三箇所か',b:'鹿島（タケミカヅチ）・香取（フツヌシ）・大甕（建葉槌命＝アマツミカボシ封印）の三社に石による封印が存在する。常陸・下総という東国が<em>「磁場の中心」</em>であり複数の封印装置が必要だった証左。'},
+      {t:'鹿島の要石',b:'境内に小さな丸石が地面にめり込む。「地中で大鯰の頭を押さえる」。江戸時代に引き抜こうとしたが底がなく断念した記録がある。'},
+      {t:'香取の要石',b:'鹿島と対になる「大鯰の尾を押さえる」。形が鹿島と異なり角張った石。二つで頭と尾を挟む二重封印の構造。'},
+      {t:'大甕の宿魂石',b:'アマツミカボシそのものを封印した巨岩。社殿がその上に建つ。石が単なる封印でなく<em>エネルギーの器（うつわ）</em>として機能している可能性を示す。'},
+    ],
+    links:['omika_j','kashima','amatsumikaboshi']
+  },
+  nikko:{
+    icon:'🧭',title:'日光東照宮の真北問題',sub:'北極星を上から押さえる徳川の都市風水',
+    secs:[
+      {t:'江戸城から真北に位置',b:'日光東照宮（栃木県日光市）は江戸城（現・皇居）から<strong>ほぼ真北の方角</strong>に位置する。北極星（アマツミカボシが象徴する天の中心）を「真北から封じる」配置。'},
+      {t:'霊的南北軸',b:'将門首塚（南・大手町）→神田明神（東北・外神田）→江戸城（中心）→日光東照宮（真北）という<em>南北の霊的軸線</em>。将門（怨霊）を南で押さえ、家康（神格化）が北極星方向に君臨。'},
+      {t:'家康の神格化',b:'家康は死後「東照大権現」として神格化。「東を照らす大権現」という名は東国（アマツミカボシの磁場）を統べるという意志表明とも読める。'},
+    ],
+    links:['ieyasu','amatsumikaboshi','masakado']
+  },
+  masakado_hoshi:{
+    icon:'✨',title:'将門＝北斗七星の化身説',sub:'影武者七人伝承と千葉氏妙見信仰の接続',
+    secs:[
+      {t:'七人の影武者',b:'将門には<strong>七人の影武者（分身）</strong>がいたとされる。六人が次々と倒されて本体だけ残った。'},
+      {t:'北斗七星との照応',b:'「七人のうち六人が倒されて一人残る」→<em>北斗七星のうち六星が消えて一星が残る</em>という民間解釈。将門の正体は北斗七星の化身という伝承の原型。'},
+      {t:'千葉氏との直結',b:'千葉氏が奉じる<strong>妙見菩薩＝北極星・北斗七星の神格</strong>。将門と同じ桓武平氏の血を持つ千葉氏が、将門（北斗七星化身）を妙見信仰で取り込む。「同族の怨霊を星神として昇華」するパターン。'},
+      {t:'アマツミカボシとの関係',b:'北極星・星神というキーワードがアマツミカボシと直接重なる。将門の怨霊＝星神のエネルギーとして、千葉氏の妙見圏の中でアマツミカボシと習合・融合している可能性。'},
+    ],
+    links:['masakado','chiba','amatsumikaboshi']
+  },
+  mononobe_east:{
+    icon:'🏃',title:'物部残党の東国逃亡説',sub:'587年滅亡後、鎮魂法はどこへ行ったか',
+    secs:[
+      {t:'587年の敗北',b:'<strong>物部守屋 vs 蘇我馬子・聖徳太子</strong>の仏教抗争。物部氏は大阪・渋川で滅亡。中央での軍事・祭祀権を完全に失った。'},
+      {t:'東国逃亡説の根拠',b:'物部氏の支族・傍系が東国（常陸・下総・武蔵方面）に流れた可能性。根拠：東国各地に「物部」地名・神社が散在。在地豪族との婚姻関係での融合。'},
+      {t:'鎮魂法伝播の経路',b:'石見・物部神社に正統な鎮魂法が残る一方、東国にも類似の呪術・振動祭祀が散在する。物部残党が常陸・下総に持ち込んだとすれば、アマツミカボシの封印地（大甕山）周辺に物部系呪術者が定着していた可能性。'},
+      {t:'千葉氏・将門との接点',b:'物部残党→東国豪族化→千葉氏の妙見圏に吸収という流れが成立するなら、千葉氏の星神信仰の底に<em>物部の鎮魂法の記憶</em>が残っている可能性がある。'},
+    ],
+    links:['mononobe','chiba','omika_j']
+  },
+  kanda_meiji:{
+    icon:'📜',title:'明治政府による将門「消去」事件',sub:'1874年の祭神除外と1984年の戦後復位',
+    secs:[
+      {t:'1874年（明治7年）の除外',b:'明治政府が神田明神の祭神から将門を外した。公式理由：天皇（朱雀天皇）に反逆し「新皇」を自称した人物は天皇制国家の神社に不適切。大己貴命を主祭神に昇格。'},
+      {t:'星のエネルギーの「再封印」',b:'アマツミカボシが国譲りで「まつろわぬ神」として封印されたように、将門は明治維新で<em>公式に消去</em>された。神話の封印が近代に繰り返された構造。'},
+      {t:'戦争と首塚',b:'1923年関東大震災後の復興計画で首塚移転が検討されたが工事関係者に事故が相次ぎ中止。太平洋戦争の空襲で周辺が焼け野原になったが首塚区画だけ焼け残ったとも言われる。'},
+      {t:'1984年の復位',b:'昭和59年、将門が正式に主祭神の一柱として復位。約110年ぶり。<em>まつろわぬエネルギーは完全には封印できなかった</em>ことを示す。'},
+    ],
+    links:['masakado','kanda','ieyasu']
+  },
+};
+
+// ── モーダル開閉 ──
+function open_(id){
+  const d=D[id];if(!d)return;
+  document.getElementById('micon').textContent=d.icon;
+  document.getElementById('mtitle').textContent=d.title;
+  document.getElementById('msub').textContent=d.sub;
+  let html='';
+  d.secs.forEach(s=>{
+    html+=`<div class="ms"><div class="mst">${s.t}</div><div class="msb">${s.b}</div></div>`;
+  });
+  document.getElementById('mcont').innerHTML=html;
+  let lh='';
+  if(d.links&&d.links.length){
+    lh='<div style="font-size:.65rem;color:#c9922a;width:100%;letter-spacing:.2em;margin-bottom:.4rem;font-weight:700;">関連する項目</div>';
+    d.links.forEach(lid=>{
+      const ld=D[lid];
+      if(ld) lh+=`<div class="mlbtn" onclick="open_('${lid}')">${ld.icon} ${ld.title.split('（')[0].split('・')[0].substring(0,10)}</div>`;
+    });
+  }
+  document.getElementById('mlinks').innerHTML=lh;
+  document.getElementById('ov').classList.add('open');
+  document.getElementById('modal').scrollTop=0;
+}
+function closeModal(){document.getElementById('ov').classList.remove('open');}
+function closeOv(e){if(e.target===document.getElementById('ov'))closeModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+</script>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>星神の封印 ── 相関図</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho+B1:wght@700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  background:#0c0906;
+  width:100%;height:100%;
+  overflow:hidden;
+  font-family:'Noto Sans JP',sans-serif;
+  color:#f0e2c8;
+  touch-action:none;
+}
+
+/* ── ヘッダー ── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;
+  background:linear-gradient(180deg,#0c0906 70%,transparent);
+  z-index:50;
+  padding:.6rem 1rem .4rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+#hdr h1{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:1.1rem;letter-spacing:.1em;color:#f0d060;
+}
+#hdr .hint{font-size:.65rem;color:#c9922a;letter-spacing:.05em;opacity:.9;}
+
+/* ── メインキャンバス ── */
+#stage{
+  position:fixed;inset:0;
+  overflow:hidden;
+  cursor:grab;
+}
+#stage:active{cursor:grabbing;}
+
+#world{
+  position:absolute;
+  width:1200px;height:900px;
+  top:50%;left:50%;
+  transform-origin:0 0;
+}
+
+/* ── SVG 線 ── */
+#lines{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;
+  overflow:visible;
+}
+
+/* ── ノードカード ── */
+.nd{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  cursor:pointer;
+  transition:filter .2s, transform .2s;
+  user-select:none;
+}
+.nd:hover .card{transform:scale(1.06);}
+.nd:active .card{transform:scale(.96);}
+
+.card{
+  border-radius:10px;
+  padding:.7rem .9rem;
+  transition:transform .15s;
+  min-width:100px;
+  text-align:center;
+  position:relative;
+  box-shadow:0 4px 20px rgba(0,0,0,.7);
+}
+
+/* 中央 アマツミカボシ */
+.c-star .card{
+  background:#1e1506;
+  border:3px solid #e8b84b;
+  box-shadow:0 0 30px rgba(232,184,75,.5), 0 4px 20px rgba(0,0,0,.8);
+  min-width:130px;
+}
+.c-star .card-icon{font-size:2.2rem;}
+.c-star .card-name{font-size:1rem;font-weight:900;color:#f0d060;letter-spacing:.06em;line-height:1.3;}
+.c-star .card-role{font-size:.62rem;color:#c9922a;margin-top:.25rem;}
+
+/* 神 */
+.c-deity .card{background:#1a1506;border:2px solid #c9922a;}
+.c-deity .card-name{color:#f0c84a;font-weight:700;font-size:.88rem;}
+
+/* 氏族 */
+.c-clan .card{background:#0c1a28;border:2px solid #6a8aaa;}
+.c-clan .card-name{color:#9ac4e8;font-weight:700;font-size:.88rem;}
+
+/* 英雄・怨霊 */
+.c-hero .card{background:#280808;border:2px solid #cc3333;}
+.c-hero .card-name{color:#ff8888;font-weight:700;font-size:.88rem;}
+
+/* 幕府 */
+.c-shogun .card{background:#082018;border:2px solid #2a8e52;}
+.c-shogun .card-name{color:#5de89a;font-weight:700;font-size:.88rem;}
+
+/* 烏・天皇 */
+.c-crow .card{background:#160a20;border:2px dashed #8a5ab8;}
+.c-crow .card-name{color:#c898e8;font-weight:700;font-size:.88rem;}
+
+/* 場所 */
+.c-place .card{background:#120e04;border:2px dashed #7a5a18;}
+.c-place .card-name{color:#d8b850;font-weight:700;font-size:.82rem;}
+
+.card-icon{font-size:1.5rem;line-height:1;margin-bottom:.2rem;}
+.card-role{font-size:.6rem;color:#a09080;margin-top:.2rem;line-height:1.4;}
+
+/* ── ピンチ用オーバーレイヒント ── */
+#pinch-hint{
+  position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);
+  font-size:.65rem;color:#c9922a;letter-spacing:.08em;
+  background:#1a1206;border:1px solid #c9922a;
+  padding:.35rem .9rem;border-radius:20px;z-index:50;
+  pointer-events:none;opacity:.85;
+}
+
+/* ── 関係ラベル（SVG用） ── */
+.rel-label{
+  font-size:10px;fill:#c9922a;font-family:'Noto Sans JP',sans-serif;
+  text-anchor:middle;dominant-baseline:middle;
+  pointer-events:none;
+}
+
+/* ══════ MODAL ══════ */
+#ov{
+  display:none;position:fixed;inset:0;
+  background:rgba(4,2,1,.93);backdrop-filter:blur(10px);
+  z-index:200;align-items:flex-end;justify-content:center;
+  padding:0;
+}
+#ov.open{display:flex;}
+#modal{
+  background:#150f05;
+  border:3px solid #c9922a;
+  border-bottom:none;
+  border-radius:16px 16px 0 0;
+  width:100%;max-width:560px;
+  max-height:75vh;overflow-y:auto;
+  padding:1.5rem 1.4rem 2rem;
+  position:relative;
+  animation:slideup .28s cubic-bezier(.22,1,.36,1);
+}
+@keyframes slideup{from{transform:translateY(100%);}to{transform:translateY(0);}}
+
+/* ドラッグバー */
+#modal::before{
+  content:'';display:block;
+  width:40px;height:4px;border-radius:2px;
+  background:#3a2a0a;margin:0 auto 1.1rem;
+}
+#mcl{
+  position:absolute;top:1.2rem;right:1.2rem;
+  font-size:1.4rem;color:#7a6040;cursor:pointer;
+  background:none;border:none;line-height:1;
+  transition:color .15s;
+}
+#mcl:hover{color:#f0e2c8;}
+#micon{font-size:2.2rem;margin-bottom:.35rem;}
+#mtitle{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:1.25rem;font-weight:700;letter-spacing:.08em;
+  color:#e8b84b;margin-bottom:.2rem;
+}
+#msub{font-size:.72rem;color:#c9922a;margin-bottom:1rem;letter-spacing:.05em;}
+.ms{margin-bottom:.9rem;}
+.mst{
+  font-size:.68rem;font-weight:700;letter-spacing:.2em;
+  color:#c9922a;margin-bottom:.35rem;
+  padding-bottom:.25rem;border-bottom:1px solid #2a1a08;
+}
+.msb{font-size:.84rem;line-height:1.9;color:#c8b89a;}
+.msb strong{color:#f0e2c8;}
+.msb em{color:#e8b84b;font-style:normal;}
+.mlinks{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.9rem;}
+.mlbtn{
+  font-size:.68rem;padding:.3rem .7rem;
+  background:#1e1408;border:1px solid #c9922a;border-radius:4px;
+  color:#e8b84b;cursor:pointer;letter-spacing:.04em;
+  transition:background .12s;
+}
+.mlbtn:hover{background:#2a1e08;}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <h1>⭐ 星神の封印 相関図</h1>
+  <div class="hint">👆タップで詳細 ✌ピンチで拡縮 ☞ドラッグで移動</div>
+</div>
+
+<div id="stage">
+  <div id="world">
+
+    <!-- SVG 関係線 -->
+    <svg id="lines" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <!-- ═══ ノード ═══
+         位置は世界座標 (cx, cy) で JS が配置
+    -->
+
+    <!-- 中央：アマツミカボシ -->
+    <div class="nd c-star" id="n-ama" data-id="amatsumikaboshi">
+      <div class="card">
+        <div class="card-icon">⭐</div>
+        <div class="card-name">アマツミカボシ<br>（天津甕星）</div>
+        <div class="card-role">まつろわぬ星神 ／ 封印の核</div>
+      </div>
+    </div>
+
+    <!-- 封印神三柱 -->
+    <div class="nd c-deity" id="n-fut" data-id="futsunushi">
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-name">経津主神<br>（フツヌシ）</div>
+        <div class="card-role">物部系 ／ 香取神宮</div>
+      </div>
+    </div>
+
+    <div class="nd c-deity" id="n-tak" data-id="takemikazuchi">
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-name">武甕槌神<br>（タケミカヅチ）</div>
+        <div class="card-role">藤原系 ／ 鹿島神宮</div>
+      </div>
+    </div>
+
+    <div class="nd c-deity" id="n-omi" data-id="omika">
+      <div class="card">
+        <div class="card-icon">🗿</div>
+        <div class="card-name">建葉槌命<br>（タケハツチ）</div>
+        <div class="card-role">倭文氏 ／ 宿魂石の番人</div>
+      </div>
+    </div>
+
+    <!-- 天皇家 -->
+    <div class="nd c-crow" id="n-yat" data-id="yatagarasu">
+      <div class="card">
+        <div class="card-icon">🐦‍⬛</div>
+        <div class="card-name">八咫烏<br>（ヤタガラス）</div>
+        <div class="card-role">天皇家東征 ／ 光の道案内</div>
+      </div>
+    </div>
+
+    <!-- 氏族 -->
+    <div class="nd c-clan" id="n-mon" data-id="mononobe">
+      <div class="card">
+        <div class="card-icon">🏛</div>
+        <div class="card-name">物部氏</div>
+        <div class="card-role">十種神宝・鎮魂法 ／ 石見〜東国</div>
+      </div>
+    </div>
+
+    <div class="nd c-clan" id="n-fuj" data-id="fujiwara">
+      <div class="card">
+        <div class="card-icon">🏛</div>
+        <div class="card-name">藤原氏</div>
+        <div class="card-role">摂関政治 ／ 中央権力</div>
+      </div>
+    </div>
+
+    <div class="nd c-clan" id="n-chi" data-id="chiba">
+      <div class="card">
+        <div class="card-icon">🏹</div>
+        <div class="card-name">千葉氏</div>
+        <div class="card-role">妙見（北極星）信仰 ／ 下総</div>
+      </div>
+    </div>
+
+    <!-- 英雄 -->
+    <div class="nd c-hero" id="n-mas" data-id="masakado">
+      <div class="card">
+        <div class="card-icon">⚔</div>
+        <div class="card-name">平 将門</div>
+        <div class="card-role">新皇 ／ 北斗七星化身 ／ 怨霊</div>
+      </div>
+    </div>
+
+    <!-- 幕府 -->
+    <div class="nd c-shogun" id="n-iye" data-id="ieyasu">
+      <div class="card">
+        <div class="card-icon">🏯</div>
+        <div class="card-name">徳川 家康</div>
+        <div class="card-role">江戸 ／ 全封印の統合者</div>
+      </div>
+    </div>
+
+    <!-- 場所 -->
+    <div class="nd c-place" id="n-omt" data-id="omika_j">
+      <div class="card">
+        <div class="card-icon">🪨</div>
+        <div class="card-name">大甕神社</div>
+        <div class="card-role">宿魂石 ／ 茨城・日立</div>
+      </div>
+    </div>
+
+    <div class="nd c-place" id="n-kas" data-id="kashima">
+      <div class="card">
+        <div class="card-icon">⛩</div>
+        <div class="card-name">鹿島・香取神宮</div>
+        <div class="card-role">要石 ／ 東国封印の二軸</div>
+      </div>
+    </div>
+
+    <div class="nd c-place" id="n-kan" data-id="kanda">
+      <div class="card">
+        <div class="card-icon">👁</div>
+        <div class="card-name">将門首塚<br>神田明神</div>
+        <div class="card-role">大手町 ／ 江戸鎮護に転用</div>
+      </div>
+    </div>
+
+  </div><!-- end world -->
+</div><!-- end stage -->
+
+<div id="pinch-hint">ドラッグ・ピンチ操作で動かせます</div>
+
+<!-- MODAL -->
+<div id="ov" onclick="closeOv(event)">
+<div id="modal">
+  <button id="mcl" onclick="closeModal()">✕</button>
+  <div id="micon"></div>
+  <div id="mtitle"></div>
+  <div id="msub"></div>
+  <div id="mcont"></div>
+  <div id="mlinks" class="mlinks"></div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════
+//  座標定義（ワールド座標 px）
+// ═══════════════════════════════
+const POS={
+  'n-ama':{x:600, y:420},   // 中央：アマツミカボシ
+  // 封印神（上部）
+  'n-omi':{x:600, y:200},   // 建葉槌 → 真上
+  'n-fut':{x:380, y:270},   // フツヌシ → 左上
+  'n-tak':{x:820, y:270},   // タケミカヅチ → 右上
+  // 天皇家（左）
+  'n-yat':{x:200, y:160},   // ヤタガラス → 左上
+  // 氏族（左右）
+  'n-mon':{x:240, y:430},   // 物部 → 左
+  'n-fuj':{x:960, y:370},   // 藤原 → 右
+  'n-chi':{x:380, y:640},   // 千葉 → 左下
+  // 英雄（下）
+  'n-mas':{x:600, y:650},   // 将門 → 下中
+  // 幕府（右下）
+  'n-iye':{x:870, y:650},   // 家康 → 右下
+  // 場所（最下部）
+  'n-omt':{x:300, y:780},   // 大甕神社 → 左下
+  'n-kas':{x:600, y:810},   // 鹿島香取 → 下
+  'n-kan':{x:870, y:790},   // 将門首塚 → 右下
+};
+
+// ═══════════════════════════════
+//  関係線定義
+//  {from, to, label, color, dash, width}
+// ═══════════════════════════════
+const RELS=[
+  // 封印神 → アマツミカボシ
+  {f:'n-omi',t:'n-ama',l:'宿魂石に封印',   c:'#e8b84b',w:3},
+  {f:'n-fut',t:'n-ama',l:'討伐・封印',      c:'#c9922a',w:2},
+  {f:'n-tak',t:'n-ama',l:'討伐・封印',      c:'#c9922a',w:2},
+  // 物部⇔フツヌシ
+  {f:'n-mon',t:'n-fut',l:'奉斎',            c:'#7a9ab8',w:2,d:'6,4'},
+  // 藤原⇔タケミカヅチ
+  {f:'n-fuj',t:'n-tak',l:'奉斎',            c:'#7a9ab8',w:2,d:'6,4'},
+  // ヤタガラス → アマツミカボシ（対比）
+  {f:'n-yat',t:'n-ama',l:'光 vs 闇',        c:'#9a6ab8',w:2,d:'4,4'},
+  // ヤタガラス → 藤原
+  {f:'n-yat',t:'n-fuj',l:'天皇家→中央権力', c:'#8a5ab8',w:1,d:'4,4'},
+  // 物部 → 千葉（逃亡・鎮魂法伝播）
+  {f:'n-mon',t:'n-chi',l:'残党逃亡?',       c:'#7a9ab8',w:1,d:'5,5'},
+  // 物部 → 将門（星神の記憶）
+  {f:'n-mon',t:'n-mas',l:'星神の記憶',      c:'#7a9ab8',w:1,d:'4,6'},
+  // 藤原 → 千葉（委任統治）
+  {f:'n-fuj',t:'n-chi',l:'委任統治',        c:'#7a9ab8',w:1,d:'6,4'},
+  // 千葉 ↔ 将門（同族・妙見で取り込み）
+  {f:'n-chi',t:'n-mas',l:'同族・妙見で昇華', c:'#cc3333',w:2},
+  // 将門 → アマツミカボシ（星神と同型）
+  {f:'n-mas',t:'n-ama',l:'北斗七星化身',    c:'#cc3333',w:2,d:'4,4'},
+  // 家康 → 将門（怨霊転用）
+  {f:'n-iye',t:'n-mas',l:'怨霊→守護神に転用',c:'#2a8e52',w:2},
+  // 家康 → 藤原（統合）
+  {f:'n-iye',t:'n-fuj',l:'鹿島・香取を統合', c:'#2a8e52',w:1,d:'5,4'},
+  // 家康 → アマツミカボシ（日光真北封印）
+  {f:'n-iye',t:'n-ama',l:'日光真北封印',    c:'#2a8e52',w:2,d:'3,4'},
+  // 場所
+  {f:'n-omi',t:'n-omt',l:'大甕山に鎮座',   c:'#8a6a28',w:1,d:'4,4'},
+  {f:'n-fut',t:'n-kas',l:'香取神宮',        c:'#8a6a28',w:1,d:'4,4'},
+  {f:'n-tak',t:'n-kas',l:'鹿島神宮',        c:'#8a6a28',w:1,d:'4,4'},
+  {f:'n-mas',t:'n-kan',l:'首塚・神田明神',  c:'#cc3333',w:1,d:'4,4'},
+  {f:'n-iye',t:'n-kan',l:'鬼門に配置',      c:'#2a8e52',w:1,d:'4,4'},
+];
+
+// ─── ノード配置 ───
+Object.entries(POS).forEach(([id,{x,y}])=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.left=x+'px';
+  el.style.top=y+'px';
+});
+
+// ─── SVG 線描画 ───
+function drawLines(){
+  const svg=document.getElementById('lines');
+  svg.innerHTML='';
+  // defs
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  // arrowhead markers
+  const colors=['#e8b84b','#c9922a','#cc3333','#2a8e52','#7a9ab8','#9a6ab8','#8a6a28'];
+  colors.forEach(c=>{
+    const mid=document.createElementNS('http://www.w3.org/2000/svg','marker');
+    const cid='arr'+c.replace('#','');
+    mid.setAttribute('id',cid);
+    mid.setAttribute('markerWidth','8');mid.setAttribute('markerHeight','8');
+    mid.setAttribute('refX','6');mid.setAttribute('refY','3');
+    mid.setAttribute('orient','auto');
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','M0,0 L0,6 L8,3 z');
+    path.setAttribute('fill',c);path.setAttribute('opacity','0.8');
+    mid.appendChild(path);defs.appendChild(mid);
+  });
+  svg.appendChild(defs);
+
+  RELS.forEach(r=>{
+    const fe=document.getElementById(r.f);
+    const te=document.getElementById(r.t);
+    if(!fe||!te)return;
+    const fp=POS[r.f],tp=POS[r.t];
+    if(!fp||!tp)return;
+
+    const dx=tp.x-fp.x, dy=tp.y-fp.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    // 曲線 control point（少し曲げる）
+    const mx=(fp.x+tp.x)/2 + dy*0.15;
+    const my=(fp.y+tp.y)/2 - dx*0.15;
+
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${fp.x},${fp.y} Q${mx},${my} ${tp.x},${tp.y}`);
+    path.setAttribute('stroke',r.c||'#c9922a');
+    path.setAttribute('stroke-width',r.w||1.5);
+    path.setAttribute('fill','none');
+    path.setAttribute('opacity','0.75');
+    if(r.d) path.setAttribute('stroke-dasharray',r.d);
+    const markerid='arr'+(r.c||'#c9922a').replace('#','');
+    path.setAttribute('marker-end',`url(#${markerid})`);
+    svg.appendChild(path);
+
+    // ラベル（中点付近）
+    if(r.l){
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',mx);t.setAttribute('y',my-6);
+      t.setAttribute('class','rel-label');
+      t.setAttribute('fill',r.c||'#c9922a');
+      t.setAttribute('opacity','0.85');
+      t.textContent=r.l;
+      svg.appendChild(t);
+    }
+  });
+}
+drawLines();
+
+// ─── パン＆ピンチ ───
+let tx=-100,ty=-80,scale=0.78;
+const world=document.getElementById('world');
+const stage=document.getElementById('stage');
+
+function applyT(){
+  world.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
+}
+// 初期センタリング（画面サイズ基準）
+function initT(){
+  const sw=window.innerWidth, sh=window.innerHeight;
+  tx=sw/2-600*scale;
+  ty=sh/2-420*scale;
+  applyT();
+}
+initT();
+window.addEventListener('resize',initT);
+
+// マウス
+let drag=false,lastX=0,lastY=0;
+stage.addEventListener('mousedown',e=>{
+  if(e.target.closest('.nd'))return;
+  drag=true;lastX=e.clientX;lastY=e.clientY;
+});
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  tx+=e.clientX-lastX;ty+=e.clientY-lastY;
+  lastX=e.clientX;lastY=e.clientY;applyT();
+});
+window.addEventListener('mouseup',()=>drag=false);
+stage.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const factor=e.deltaY>0?0.92:1.09;
+  scale=Math.max(.35,Math.min(2.0,scale*factor));
+  applyT();
+},{passive:false});
+
+// タッチ
+let touches=[];
+let lastDist=0;
+stage.addEventListener('touchstart',e=>{
+  touches=Array.from(e.touches);
+  if(touches.length===2){
+    lastDist=Math.hypot(
+      touches[0].clientX-touches[1].clientX,
+      touches[0].clientY-touches[1].clientY
+    );
+  }
+  lastX=touches[0].clientX;lastY=touches[0].clientY;
+},{passive:true});
+
+stage.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const cur=Array.from(e.touches);
+  if(cur.length===2&&lastDist>0){
+    const d=Math.hypot(
+      cur[0].clientX-cur[1].clientX,
+      cur[0].clientY-cur[1].clientY
+    );
+    scale=Math.max(.35,Math.min(2.0,scale*(d/lastDist)));
+    lastDist=d;applyT();
+  } else if(cur.length===1){
+    tx+=cur[0].clientX-lastX;ty+=cur[0].clientY-lastY;
+    lastX=cur[0].clientX;lastY=cur[0].clientY;applyT();
+  }
+},{passive:false});
+
+stage.addEventListener('touchend',e=>{
+  if(e.touches.length<2)lastDist=0;
+  touches=Array.from(e.touches);
+},{passive:true});
+
+// ─── ノードタップ ───
+document.querySelectorAll('.nd').forEach(nd=>{
+  nd.addEventListener('click',e=>{
+    const id=nd.dataset.id;
+    if(id) openModal(id);
+  });
+});
+
+// ═══════════════════════════════
+//  モーダルデータ
+// ═══════════════════════════════
+const D={
+  amatsumikaboshi:{
+    icon:'⭐',title:'アマツミカボシ（天津甕星）',sub:'別名：天香香背男 ／ まつろわぬ星神 ／ 封印の核',
+    secs:[
+      {t:'正体',b:'日本書紀の一書に登場する<strong>星の神</strong>。国譲り神話で葦原中国平定に最後まで抵抗した「まつろわぬ神」の象徴。経津主神・武甕槌神が遣わされる前に「天に悪神あり」と言われた存在。'},
+      {t:'宿魂石への封印',b:'常陸国の<strong>大甕山</strong>に逃れ巨岩に化して抵抗。建葉槌命に倒され、その岩（宿魂石）に魂が封印された。大甕神社（日立市）がその場所。社殿が巨岩の上に建つ。'},
+      {t:'北極星・金星のイメージ',b:'<em>北極星・金星（明けの明星）</em>のイメージを持つ。千葉氏の妙見（北極星）信仰、将門の「北斗七星化身説」も、この星神エネルギーを取り込む構造。'},
+      {t:'物部鎮魂法との接点',b:'「布瑠部ゆらゆらと布瑠部」は<strong>死者を蘇らせる</strong>振動儀式。まさにアマツミカボシが象徴する「生死の境界」を操作しようとするもの。深く実践すると星神のエネルギーが反応するとされる所以。'},
+    ],
+    links:['futsunushi','takemikazuchi','omika','yatagarasu','mononobe']
+  },
+  futsunushi:{
+    icon:'⚡',title:'経津主神（フツヌシ）',sub:'香取神宮の御祭神 ／ 物部系の剣神',
+    secs:[
+      {t:'神格',b:'「フツ」は剣の切れ味の擬音。<strong>韴霊剣（ふつのみたま）</strong>の神格化。物部氏が奉じた軍事の神。国譲り神話でタケミカヅチとともにアマツミカボシ討伐に関わる。'},
+      {t:'香取神宮と要石',b:'千葉県香取市の<strong>香取神宮</strong>に鎮座。境内に<em>要石</em>がある。鹿島の要石と対になって「大鯰の頭と尾を押さえる」とされる二重封印装置。'},
+      {t:'物部氏との関係',b:'物部の祖が携えた<strong>十種神宝</strong>の中の韴霊剣がフツノミタマ（経津主神の本体）。物部が587年に中央で滅びても、香取神宮の神統は生き続けた。'},
+    ],
+    links:['amatsumikaboshi','mononobe','kashima']
+  },
+  takemikazuchi:{
+    icon:'⚡',title:'武甕槌神（タケミカヅチ）',sub:'鹿島神宮の御祭神 ／ 藤原系の雷神',
+    secs:[
+      {t:'神格',b:'雷神・剣神。国譲り神話の主役。藤原氏（中臣氏）の守護神として中央権力の象徴となった。'},
+      {t:'鹿島神宮と要石',b:'茨城県鹿嶋市の<strong>鹿島神宮</strong>に鎮座。境内の<em>要石</em>は地中で大鯰の頭を押さえているとされる。江戸時代に引き抜こうとしたが底がなく断念した記録がある。'},
+      {t:'藤原氏との関係',b:'「武の物部（フツノミタマ）」vs「政の藤原（タケミカヅチ）」という東国支配の二軸が、香取・鹿島として地理的に表現されている。'},
+    ],
+    links:['amatsumikaboshi','fujiwara','kashima']
+  },
+  omika:{
+    icon:'🗿',title:'建葉槌命（タケハツチ）',sub:'倭文氏の祖神 ／ 大甕山の封印神',
+    secs:[
+      {t:'神格',b:'機織り・呪術関連の部民「倭文氏」の祖神。アマツミカボシを岩ごと封印した「境界の番人」。'},
+      {t:'大甕神社',b:'社殿が<strong>宿魂石という巨岩の上に直接建つ</strong>という極めて珍しい構造。民間伝承では金の靴で巨岩を蹴り砕いたという話も残る。'},
+      {t:'封印の技法',b:'「宿魂」＝魂を宿す石。物部の鎮魂法（振動で魂を体に戻す）と逆の技法で石が「魂を閉じ込める」。<em>封印石と鎮魂法は同じ「魂の境界」を扱う表裏一体の技術。</em>'},
+    ],
+    links:['amatsumikaboshi','omika_j']
+  },
+  yatagarasu:{
+    icon:'🐦‍⬛',title:'八咫烏（ヤタガラス）',sub:'三本足の烏 ／ 神武天皇の道案内 ／ 天皇家東征の象徴',
+    secs:[
+      {t:'神話上の役割',b:'神武天皇が熊野から大和へ東征する際に天照大神から遣わされた三本足の烏。「八咫」は非常に大きいという意味。険しい山道の<strong>道案内</strong>を担った。'},
+      {t:'三本足の意味',b:'<em>太陽の象徴（三足烏）</em>として中国・朝鮮にも共通する神話的存在。賀茂氏（上賀茂・下鴨神社）の祖・賀茂建角身命がヤタガラスに化したとされる。'},
+      {t:'アマツミカボシとの対比',b:'アマツミカボシ＝<em>まつろわぬ星（闇・抵抗）</em>に対し、ヤタガラス＝<em>光の烏（道案内・天皇家守護）</em>。神武東征（ヤタガラス）と星神封印（大甕山）は「天皇家による国土統一」の表と裏。'},
+    ],
+    links:['amatsumikaboshi','fujiwara']
+  },
+  mononobe:{
+    icon:'🏛',title:'物部氏',sub:'軍事・鎮魂・死者蘇生の秘法を担う古代氏族',
+    secs:[
+      {t:'祖神と本拠',b:'祖神：<strong>宇摩志麻遅命（うましまじのみこと）</strong>。石見国一宮・物部神社（島根県大田市）が中心。その由緒書きに鎮魂法の秘儀が記されている。'},
+      {t:'十種神宝と鎮魂法',b:'<em>「一二三四五六七八九十、布瑠部（ふるべ）、由良由良止（ゆらゆらと）布瑠部」</em>。先代旧事本紀：「死れる人は返りて生きなむ」。<strong>死者蘇生の秘儀。</strong>'},
+      {t:'587年滅亡と東国逃亡説',b:'物部守屋が蘇我馬子・聖徳太子に敗北。一部が東国（常陸・下総）に落ち延び在地豪族と融合したという説。鎮魂法が東国に残った経路かもしれない。'},
+    ],
+    links:['amatsumikaboshi','futsunushi','chiba']
+  },
+  fujiwara:{
+    icon:'🏛',title:'藤原氏（中臣氏）',sub:'朝廷支配を確立した中央権力氏族',
+    secs:[
+      {t:'成立',b:'中臣鎌足が645年の大化改新で台頭。子・藤原不比等が律令体制整備。タケミカヅチ（鹿島）を奉じ摂関政治で権力を独占。'},
+      {t:'物部氏との対立',b:'587年に物部守屋を滅ぼした蘇我氏の後継として台頭。「武の物部（フツノミタマ）」vs「政の藤原（タケミカヅチ）」。東国支配の二軸。'},
+      {t:'将門討伐',b:'将門の乱を<strong>藤原秀郷（俵藤太）</strong>と平貞盛が討伐。しかし将門怨霊は強力すぎ封印が必要になった。'},
+    ],
+    links:['takemikazuchi','masakado','chiba','kashima']
+  },
+  chiba:{
+    icon:'🏹',title:'千葉氏',sub:'下総・常陸の支配豪族 ／ 妙見（北極星）信仰の担い手',
+    secs:[
+      {t:'出自',b:'桓武平氏の流れ。将門と同じ平氏の血筋。将門の乱では朝廷側についたが同族の記憶は残る。下総国千葉庄を本拠に常陸を実効支配。'},
+      {t:'妙見菩薩信仰',b:'氏神として<em>妙見菩薩（北極星・北斗七星）</em>を信仰。アマツミカボシ（天の星神・北極星イメージ）との習合が構造的に起きる。'},
+      {t:'星神取り込みの構造',b:'封印された星神（アマツミカボシ）を妙見として守護神に取り込み。将門（北斗七星化身）を同族として内包する。<em>「まつろわぬ星のエネルギーを守護に変換」する構造の完成形。</em>'},
+    ],
+    links:['amatsumikaboshi','masakado','mononobe']
+  },
+  masakado:{
+    icon:'⚔',title:'平 将門',sub:'東国の覇者 ／ まつろわぬ怨霊の代名詞',
+    secs:[
+      {t:'生涯と乱',b:'桓武平氏。935〜940年に常陸〜関東を制圧し<em>「新皇」</em>を自称。藤原秀郷・平貞盛に討伐され落命。'},
+      {t:'北斗七星化身説',b:'七人の影武者が次々倒され本体だけ残ったという伝承。「北斗七星のうち六星が消えて一星残った」と読む民間解釈。千葉氏の妙見（北斗）信仰と直結。'},
+      {t:'首塚と怨霊',b:'首は京都まで飛んだ後に武蔵国へ。<strong>大手町の将門首塚</strong>は現在も東京に存在し、移転しようとすると不幸が続くとされ手がつけられない。'},
+      {t:'神田明神と明治の消去',b:'家康が江戸城の鬼門方向に神田明神を配置し守護神に転用。1874年に明治政府が祭神から除外→1984年に復位。<em>まつろわぬエネルギーは近代まで政治的に危険視された。</em>'},
+    ],
+    links:['chiba','fujiwara','kanda','ieyasu','amatsumikaboshi']
+  },
+  ieyasu:{
+    icon:'🏯',title:'徳川 家康',sub:'江戸という最終封印装置の設計者',
+    secs:[
+      {t:'江戸入府と霊的設計',b:'1590年に江戸入府。風水・陰陽道的な霊的設計を都市の骨格に組み込んだ。'},
+      {t:'将門怨霊の転用',b:'神田明神（将門の怨霊）を<strong>江戸城の鬼門（東北）方向</strong>に配置し怨霊の力を逆用して江戸を守護させる。「最大の怨霊を最強の守護神に転用」。'},
+      {t:'日光東照宮の真北配置',b:'家康の廟所・日光東照宮は江戸城から<em>ほぼ真北</em>に位置する。北極星（アマツミカボシが象徴する天の中心）を「上から封じる」配置。将門首塚→江戸城→日光という<em>南北の霊的軸線</em>。'},
+      {t:'全封印の統合',b:'①将門怨霊転用、②鹿島・香取東守護軸、③日光真北封印、④千葉氏妙見圏吸収。<em>「まつろわぬ星のエネルギーを封じて権力の礎にする」パターンの集大成。</em>'},
+    ],
+    links:['masakado','kashima','kanda','amatsumikaboshi']
+  },
+  omika_j:{
+    icon:'🪨',title:'大甕神社',sub:'茨城県日立市 ／ 宿魂石の封印地',
+    secs:[
+      {t:'場所と特徴',b:'常磐線・大甕駅から徒歩圏内。社殿が<strong>宿魂石という巨岩の上に直接建つ</strong>という極めて珍しい構造。アマツミカボシの魂が封印された場所。'},
+      {t:'宿魂石',b:'「魂を宿す石」の意。物部の鎮魂法（魂を振動で体に戻す）とは逆に、石が「魂を閉じ込める」。封印石と鎮魂法は同じ「魂の境界」を扱う表裏一体の技術。'},
+    ],
+    links:['amatsumikaboshi','omika','kashima']
+  },
+  kashima:{
+    icon:'⛩',title:'鹿島神宮・香取神宮',sub:'東国の二大封印神宮 ／ 要石あり',
+    secs:[
+      {t:'位置関係',b:'<strong>鹿島神宮</strong>（茨城・鹿嶋）：タケミカヅチ＝藤原系。<strong>香取神宮</strong>（千葉・香取）：フツヌシ＝物部系。利根川を挟んで向かい合い東国支配の霊的二軸を形成。'},
+      {t:'要石（三箇所）',b:'両神宮にそれぞれ<em>要石</em>がある。「大鯰の頭（鹿島）と尾（香取）を押さえている」とされる地震封じ。大甕の宿魂石と合わせると<strong>三箇所の封印石</strong>が東国に存在する。'},
+      {t:'家康の統合',b:'家康が鹿島・香取を東方の守護軸に組み込んだ。物部（香取）・藤原（鹿島）という古代の対立を統合する形で東国霊的支配を完成させた。'},
+    ],
+    links:['futsunushi','takemikazuchi','ieyasu','omika_j']
+  },
+  kanda:{
+    icon:'👁',title:'将門首塚・神田明神',sub:'大手町の怨霊封印 ／ 明治に除外→戦後復位',
+    secs:[
+      {t:'将門首塚',b:'東京都千代田区大手町。高層ビルの谷間に突然現れる石造りの塚。移転・撤去しようとするたびに関係者に不幸・事故が続いたとされ現在も動かされていない。'},
+      {t:'神田明神',b:'将門を祭神として祀る。家康が江戸城の<strong>鬼門（東北）方向に配置</strong>し怨霊の力を江戸守護に転用した。'},
+      {t:'明治の消去（1874年）と復位（1984年）',b:'1874年、明治政府が将門を祭神から外した。理由：天皇に反逆した将門が天皇制国家に不適切。1984年に正式復位。<em>まつろわぬエネルギーは完全には封印できなかった。</em>'},
+    ],
+    links:['masakado','ieyasu']
+  },
+};
+
+function openModal(id){
+  const d=D[id];if(!d)return;
+  document.getElementById('micon').textContent=d.icon;
+  document.getElementById('mtitle').textContent=d.title;
+  document.getElementById('msub').textContent=d.sub;
+  let html='';
+  d.secs.forEach(s=>{
+    html+=`<div class="ms"><div class="mst">${s.t}</div><div class="msb">${s.b}</div></div>`;
+  });
+  document.getElementById('mcont').innerHTML=html;
+  let lh='';
+  if(d.links&&d.links.length){
+    lh='<div style="font-size:.65rem;color:#c9922a;width:100%;letter-spacing:.15em;margin-bottom:.4rem;font-weight:700;">関連する人物・場所</div>';
+    d.links.forEach(lid=>{
+      const ld=D[lid];
+      if(ld) lh+=`<div class="mlbtn" onclick="openModal('${lid}')">${ld.icon} ${ld.title.substring(0,12)}</div>`;
+    });
+  }
+  document.getElementById('mlinks').innerHTML=lh;
+  document.getElementById('ov').classList.add('open');
+  document.getElementById('modal').scrollTop=0;
+}
+function closeModal(){document.getElementById('ov').classList.remove('open');}
+function closeOv(e){if(e.target===document.getElementById('ov'))closeModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+</script>
+</body>
+</html>

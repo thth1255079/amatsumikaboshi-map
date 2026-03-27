@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>常陸の星神と東国の覇者たち</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700;900&family=Shippori+Mincho:wght@400;700&display=swap');
+
+  :root {
+    --ink: #1a1208;
+    --parchment: #f5ede0;
+    --gold: #b8860b;
+    --gold-light: #d4a843;
+    --crimson: #8b1a1a;
+    --steel: #4a5568;
+    --mist: #d4c9b8;
+    --glow: rgba(184,134,11,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--ink);
+    font-family: 'Noto Serif JP', serif;
+    color: var(--parchment);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Starfield background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 20%, rgba(184,134,11,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(139,26,26,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(26,18,8,1) 0%, rgba(10,8,5,1) 100%);
+    z-index: 0;
+  }
+
+  .stars {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--d, 3s) ease-in-out infinite var(--delay, 0s);
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--min-op, 0.2); transform: scale(1); }
+    50% { opacity: var(--max-op, 0.8); transform: scale(1.3); }
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+    border-bottom: 1px solid rgba(184,134,11,0.3);
+  }
+
+  .header-sub {
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.8;
+  }
+
+  header h1 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: clamp(1.2rem, 4vw, 2rem);
+    font-weight: 700;
+    color: var(--parchment);
+    letter-spacing: 0.15em;
+    line-height: 1.4;
+  }
+
+  header h1 span {
+    color: var(--gold-light);
+  }
+
+  .header-desc {
+    font-size: 0.72rem;
+    color: var(--mist);
+    margin-top: 0.7rem;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+  }
+
+  /* ===== MAIN LAYOUT ===== */
+  .diagram {
+    position: relative;
+    z-index: 10;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  /* ===== LAYERS ===== */
+  .layer {
+    margin-bottom: 0;
+  }
+
+  .layer-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-align: center;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+
+  /* ===== NODES ===== */
+  .node {
+    border-radius: 4px;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+
+  .node .node-name {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.25rem;
+  }
+
+  .node .node-sub {
+    font-size: 0.62rem;
+    opacity: 0.7;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  .node .node-tag {
+    display: inline-block;
+    font-size: 0.52rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+    margin-top: 0.3rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Node styles by category */
+  .node-deity {
+    background: linear-gradient(135deg, rgba(184,134,11,0.18), rgba(184,134,11,0.05));
+    border: 1px solid rgba(184,134,11,0.5);
+  }
+  .node-deity .node-name { color: var(--gold-light); }
+  .node-deity .node-tag { background: rgba(184,134,11,0.2); color: var(--gold-light); border: 1px solid rgba(184,134,11,0.3); }
+
+  .node-clan {
+    background: linear-gradient(135deg, rgba(74,85,104,0.3), rgba(74,85,104,0.1));
+    border: 1px solid rgba(74,85,104,0.5);
+  }
+  .node-clan .node-name { color: #a0aec0; }
+  .node-clan .node-tag { background: rgba(74,85,104,0.3); color: #a0aec0; border: 1px solid rgba(74,85,104,0.4); }
+
+  .node-hero {
+    background: linear-gradient(135deg, rgba(139,26,26,0.25), rgba(139,26,26,0.08));
+    border: 1px solid rgba(139,26,26,0.5);
+  }
+  .node-hero .node-name { color: #fc8181; }
+  .node-hero .node-tag { background: rgba(139,26,26,0.2); color: #fc8181; border: 1px solid rgba(139,26,26,0.3); }
+
+  .node-shogun {
+    background: linear-gradient(135deg, rgba(44,78,55,0.3), rgba(44,78,55,0.1));
+    border: 1px solid rgba(68,120,85,0.5);
+  }
+  .node-shogun .node-name { color: #68d391; }
+  .node-shogun .node-tag { background: rgba(44,78,55,0.3); color: #68d391; border: 1px solid rgba(68,120,85,0.4); }
+
+  .node-place {
+    background: linear-gradient(135deg, rgba(79,60,30,0.3), rgba(79,60,30,0.1));
+    border: 1px solid rgba(120,100,50,0.4);
+    border-style: dashed;
+  }
+  .node-place .node-name { color: #e2c97e; font-size: 0.85rem; }
+  .node-place .node-tag { background: rgba(79,60,30,0.2); color: #e2c97e; border: 1px solid rgba(120,100,50,0.3); }
+
+  /* ===== GRID LAYOUTS ===== */
+  .grid-1 { display: flex; justify-content: center; }
+  .grid-1 .node { width: min(320px, 90%); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .grid-2-1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  /* ===== CONNECTORS ===== */
+  .connector-section {
+    position: relative;
+    margin: 0.5rem 0;
+  }
+
+  .connector-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+  }
+
+  .connector-line::before,
+  .connector-line::after {
+    content: '';
+    flex: 1;
+    max-width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(184,134,11,0.3));
+  }
+  .connector-line::after {
+    background: linear-gradient(90deg, rgba(184,134,11,0.3), transparent);
+  }
+
+  .conn-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    opacity: 0.6;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .arrow-down {
+    text-align: center;
+    color: rgba(184,134,11,0.4);
+    font-size: 1.2rem;
+    line-height: 1;
+    margin: 0.15rem 0;
+  }
+
+  /* ===== RELATION LINES (SVG) ===== */
+  .relations-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(184,134,11,0.15);
+  }
+
+  .relations-title {
+    font-size: 0.62rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 1.2rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+  }
+
+  /* ===== RELATION CARDS ===== */
+  .rel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 500px) {
+    .rel-grid { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+
+  .rel-card {
+    border: 1px solid rgba(184,134,11,0.15);
+    border-radius: 3px;
+    padding: 0.8rem;
+    background: rgba(255,255,255,0.02);
+    transition: background 0.2s;
+  }
+
+  .rel-card:hover {
+    background: rgba(184,134,11,0.04);
+  }
+
+  .rel-title {
+    font-size: 0.65rem;
+    color: var(--gold-light);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(184,134,11,0.15);
+  }
+
+  .rel-title .arrow {
+    color: var(--crimson);
+    margin: 0 0.25rem;
+    opacity: 0.7;
+  }
+
+  .rel-body {
+    font-size: 0.63rem;
+    line-height: 1.8;
+    color: var(--mist);
+    opacity: 0.85;
+  }
+
+  .rel-body strong {
+    color: var(--parchment);
+    font-weight: 400;
+  }
+
+  /* ===== KEYSTONE BOX ===== */
+  .keystone {
+    margin-top: 1.8rem;
+    padding: 1.2rem 1.4rem;
+    background: linear-gradient(135deg, rgba(184,134,11,0.08), rgba(139,26,26,0.05));
+    border: 1px solid rgba(184,134,11,0.25);
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  .keystone-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.85rem;
+    color: var(--gold-light);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.8rem;
+  }
+
+  .keystone-body {
+    font-size: 0.65rem;
+    line-height: 2;
+    color: var(--mist);
+    opacity: 0.85;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .keystone-body em {
+    color: var(--gold-light);
+    font-style: normal;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin: 1.5rem 0 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid rgba(184,134,11,0.1);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.58rem;
+    color: var(--mist);
+    opacity: 0.7;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+  .ld-deity { background: rgba(184,134,11,0.5); border: 1px solid rgba(184,134,11,0.7); }
+  .ld-clan  { background: rgba(74,85,104,0.5);  border: 1px solid rgba(74,85,104,0.7);  }
+  .ld-hero  { background: rgba(139,26,26,0.5);  border: 1px solid rgba(139,26,26,0.7);  }
+  .ld-shog  { background: rgba(44,78,55,0.5);   border: 1px solid rgba(68,120,85,0.7);  }
+  .ld-plce  { background: rgba(79,60,30,0.3);   border: 1px solid rgba(120,100,50,0.5); }
+
+  footer {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    font-size: 0.58rem;
+    color: var(--mist);
+    opacity: 0.4;
+    letter-spacing: 0.1em;
+    border-top: 1px solid rgba(184,134,11,0.1);
+  }
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars" id="stars"></div>
+
+<header>
+  <div class="header-sub">常陸国と東国の覇権史 ── 神話層から江戸幕府まで</div>
+  <h1>星神と東国の覇者たち<br><span>アマツミカボシ相関図</span></h1>
+  <div class="header-desc">物部氏 ／ 千葉氏 ／ 藤原氏 ／ 平将門 ／ 徳川家康 ── 五つの力が絡み合う「常陸」という磁場</div>
+</header>
+
+<div class="diagram">
+
+  <!-- ===== LAYER 0: 神話層 ===== -->
+  <div class="layer-label">神 話 層 ── 古代の星と魂</div>
+
+  <div class="grid-1">
+    <div class="node node-deity">
+      <div class="node-name">⭐ アマツミカボシ（天津甕星）</div>
+      <div class="node-sub">別名・天香香背男。国譲り神話で最後まで抵抗した星の神。<br>常陸国・大甕山の「宿魂石（しゅくこんせき）」に封印されたとされる。<br>北極星・金星のイメージ。まつろわぬ神の象徴。</div>
+      <span class="node-tag">星神 ／ 悪神 ／ 磁場の中心</span>
+    </div>
+  </div>
+
+  <div class="arrow-down">↓</div>
+  <div class="connector-line"><span class="conn-label">誅伐・封印を担った神々</span></div>
+  <div class="arrow-down">↓</div>
+
+  <div class="grid-2">
+    <div class="node node-deity">
+      <div class="node-name">⚡ 経津主神（フツヌシ）</div>
+      <div class="node-sub">物部氏が奉じた韴霊剣（フツノミタマ）の神格。<br>国譲りの先遣神。物部氏の軍事・祭祀権力の象徴。<br>→ 香取神宮（千葉）に鎮座</div>
+      <span class="node-tag">物部系祭祀神 ／ 香取</span>
+    </div>
+    <div class="node node-deity">
+      <div class="node-name">⚡ 武甕槌神（タケミカヅチ）</div>
+      <div class="node-sub">藤原氏が奉じた雷神・剣神。<br>国譲りの主役。藤原氏の守護神として中央権力の象徴。<br>→ 鹿島神宮（茨城）に鎮座</div>
+      <span class="node-tag">藤原系祭祀神 ／ 鹿島</span>
+    </div>
+  </div>
+
+  <div class="arrow-down">↓</div>
+  <div class="connector-line"><span class="conn-label">宿魂石の番人</span></div>
+  <div class="arrow-down">↓</div>
+
+  <div class="grid-1">
+    <div class="node node-deity">
+      <div class="node-name">🗿 建葉槌命（タケハツチ）・大甕神社</div>
+      <div class="node-sub">倭文（しどり）氏の祖神。アマツミカボシを岩ごと封印した神。<br>大甕山（茨城県日立市）の巨石＝宿魂石。<br>物部氏の東国進出ルートとも重なる「境界の番人」。</div>
+      <span class="node-tag">常陸の封印神 ／ 大甕神社</span>
+    </div>
+  </div>
+
+  <!-- ===== SPACER ===== -->
+  <div style="margin:1.5rem 0; border-top:1px solid rgba(184,134,11,0.12);"></div>
+
+  <!-- ===== LAYER 1: 古代氏族層 ===== -->
+  <div class="layer-label">古 代 氏 族 層 ── 軍事と祭祀の二大勢力</div>
+
+  <div class="grid-2">
+    <div class="node node-clan">
+      <div class="node-name">🏛 物部氏</div>
+      <div class="node-sub">祖神：宇摩志麻遅命（うましまじのみこと）<br>十種神宝・鎮魂法（布瑠部ゆらゆら）を伝える<br>軍事・呪術・死者蘇生の秘法を担う<br>石見国一宮・物部神社（島根大田市）の奉斎氏族<br>フツノミタマ＝経津主神とリンク</div>
+      <span class="node-tag">西日本 → 東国進出</span>
+    </div>
+    <div class="node node-clan">
+      <div class="node-name">🏛 藤原氏（中臣氏）</div>
+      <div class="node-sub">祖：中臣鎌足 → 藤原不比等<br>武甕槌神＝鹿島神宮を奉じ朝廷支配を確立<br>摂関政治で権力を独占。<br>常陸・下総方面の支配を東国豪族に委任<br>→ 千葉氏の祖・藤原北家と結びつく</div>
+      <span class="node-tag">中央権力 → 東国豪族へ委任</span>
+    </div>
+  </div>
+
+  <!-- ===== SPACER ===== -->
+  <div style="margin:1.5rem 0; border-top:1px solid rgba(184,134,11,0.12);"></div>
+
+  <!-- ===== LAYER 2: 東国豪族・将門 ===== -->
+  <div class="layer-label">中 世 層 ── 東国の反乱と怨霊</div>
+
+  <div class="grid-2">
+    <div class="node node-hero">
+      <div class="node-name">⚔ 平将門</div>
+      <div class="node-sub">桓武平氏。下総（千葉）・常陸を制圧し「新皇」を称す。<br>940年 藤原秀郷・平貞盛に討伐される。<br>将門の「怨霊・首塚」伝説 → 東京大手町に現存。<br>アマツミカボシと同じく「東国の反乱・まつろわぬ力」の象徴。<br>将門を祀る神田明神は後に家康が江戸の鎮守に</div>
+      <span class="node-tag">935〜940年 ／ 常陸・下総</span>
+    </div>
+    <div class="node node-clan">
+      <div class="node-name">🏹 千葉氏</div>
+      <div class="node-sub">平氏系（桓武平氏）の東国豪族。下総国千葉庄を本拠。<br>将門の乱後に藤原氏・朝廷側として台頭。<br>妙見菩薩（北極星神）を氏神として信仰。<br>── 妙見＝星神＝アマツミカボシとの習合説あり ──<br>北斗七星・北極星信仰で将門（星の反乱）を取り込む構造</div>
+      <span class="node-tag">下総・常陸支配 ／ 妙見信仰</span>
+    </div>
+  </div>
+
+  <div class="connector-line" style="margin-top:0.75rem;">
+    <span class="conn-label">千葉氏の妙見（北極星）信仰 ＝ アマツミカボシ（星神）封印・取り込みの構造</span>
+  </div>
+
+  <!-- ===== SPACER ===== -->
+  <div style="margin:1.5rem 0; border-top:1px solid rgba(184,134,11,0.12);"></div>
+
+  <!-- ===== LAYER 3: 徳川 ===== -->
+  <div class="layer-label">近 世 層 ── 江戸という最終封印装置</div>
+
+  <div class="grid-1">
+    <div class="node node-shogun">
+      <div class="node-name">🏯 徳川家康</div>
+      <div class="node-sub">江戸入府（1590年）。将門の首塚・神田明神を江戸城の鬼門方向に配置。<br>東照宮（日光）を北に置き、江戸を風水で鎮圧する都市設計。<br>鹿島神宮（タケミカヅチ＝藤原系）・香取神宮（フツヌシ＝物部系）を<br>利根川水系で繋ぐ形で東国の霊的支配を完成させる。<br>将門の怨霊 → 神田明神として取り込み江戸鎮護に転用。<br>つまり「星神の反乱エネルギーを鎮めて政権の礎にする」構造の完成形。</div>
+      <span class="node-tag">1590〜 江戸幕府 ／ 最終封印</span>
+    </div>
+  </div>
+
+  <!-- ===== PLACE NODES ===== -->
+  <div style="margin:1.5rem 0; border-top:1px solid rgba(184,134,11,0.12);"></div>
+  <div class="layer-label">地 霊 層 ── 磁場としての常陸・東国</div>
+
+  <div class="grid-3">
+    <div class="node node-place">
+      <div class="node-name">大甕神社</div>
+      <div class="node-sub">宿魂石でアマツミカボシを封印。茨城・日立市。</div>
+      <span class="node-tag">常陸 ／ 封印</span>
+    </div>
+    <div class="node node-place">
+      <div class="node-name">鹿島・香取神宮</div>
+      <div class="node-sub">タケミカヅチ＆フツヌシ。藤原・物部の霊的軸線。</div>
+      <span class="node-tag">東国制圧軸</span>
+    </div>
+    <div class="node node-place">
+      <div class="node-name">将門首塚・神田明神</div>
+      <div class="node-sub">怨霊→鎮護へ。家康の江戸設計の要。</div>
+      <span class="node-tag">江戸 ／ 転用封印</span>
+    </div>
+  </div>
+
+  <!-- ===== RELATIONS SECTION ===== -->
+  <div class="relations-section">
+    <div class="relations-title">── 五つの絡み合いを解く ──</div>
+
+    <div class="rel-grid">
+
+      <div class="rel-card">
+        <div class="rel-title">アマツミカボシ <span class="arrow">→</span> 物部氏</div>
+        <div class="rel-body">
+          国譲りで「まつろわぬ星神を倒す」のが<strong>フツヌシ（経津主神）</strong>＝物部氏の剣神。
+          さらに物部の<strong>鎮魂法（死者蘇生の振動儀式）</strong>は、魂の境界＝星神が支配する領域と直接対峙する技法。
+          石見物部神社の由緒書きにある鎮魂秘法の核心が、ここと繋がる。
+        </div>
+      </div>
+
+      <div class="rel-card">
+        <div class="rel-title">アマツミカボシ <span class="arrow">→</span> 千葉氏</div>
+        <div class="rel-body">
+          千葉氏の氏神は<strong>妙見菩薩（北極星・北斗）</strong>。
+          アマツミカボシ＝天の星神と妙見は<strong>星神信仰として習合</strong>しやすい。
+          千葉氏は「封印された星のエネルギーを守護神として取り込む」構造を持つ。
+          将門という「星の反乱」もこの文脈で再吸収される。
+        </div>
+      </div>
+
+      <div class="rel-card">
+        <div class="rel-title">物部氏 <span class="arrow">→</span> 藤原氏</div>
+        <div class="rel-body">
+          587年 <strong>物部守屋 vs 蘇我馬子・聖徳太子</strong>の仏教抗争で物部氏は滅亡（中央での力を失う）。
+          代わって台頭した中臣（藤原）氏が朝廷祭祀を掌握。
+          ただし軍事神・フツノミタマの系譜は香取神宮として残り、鹿島（藤原）と並立。
+          「剣の物部」vs「政の藤原」の対立構造が東国支配の二軸になる。
+        </div>
+      </div>
+
+      <div class="rel-card">
+        <div class="rel-title">藤原氏 <span class="arrow">→</span> 平将門</div>
+        <div class="rel-body">
+          将門を討ったのは<strong>藤原秀郷（俵藤太）</strong>。
+          藤原氏にとって将門は「東国の自立」＝中央権力への最大の脅威だった。
+          しかし将門の怨霊は強力すぎ、<strong>怨霊→神（神田明神）</strong>への転換が必要になる。
+          「滅ぼしても封印しなければならない力」という点でアマツミカボシと同型。
+        </div>
+      </div>
+
+      <div class="rel-card">
+        <div class="rel-title">平将門 <span class="arrow">→</span> 千葉氏</div>
+        <div class="rel-body">
+          千葉氏は桓武平氏＝将門と<strong>同じ平氏の血筋</strong>。
+          将門の乱では朝廷側についたが、同族としての記憶は残る。
+          妙見信仰（北極星）で「星の力」を取り込む構造は、
+          将門（東国・星の反乱）のエネルギーを氏神として内包する試みとも読める。
+        </div>
+      </div>
+
+      <div class="rel-card">
+        <div class="rel-title">徳川家康 <span class="arrow">→</span> 全て</div>
+        <div class="rel-body">
+          家康の江戸設計は<strong>すべての層を統合した最終封印</strong>。
+          ①将門怨霊→神田明神で江戸鎮護に転用。
+          ②鹿島（藤原系）・香取（物部系）を東の霊的守護軸に。
+          ③日光東照宮を北に置き、鬼門を封じる。
+          ④千葉氏の妙見（星神）信仰圏も利根川以東に取り込む。
+          「反乱するエネルギーを封じて権力の礎にする」という構造の集大成。
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== KEYSTONE ===== -->
+  <div class="keystone">
+    <div class="keystone-title">── 全体を貫く一本の線 ──</div>
+    <div class="keystone-body">
+      <em>「まつろわぬ星のエネルギーを、封印 → 取り込み → 権力の礎へ」</em>という構造が、<br>
+      神話層（アマツミカボシ封印）→ 古代（物部 vs 藤原）→ 中世（将門の乱・千葉氏の妙見）→ 近世（家康の江戸）<br>
+      と、<em>同じパターンで繰り返されている</em>。<br><br>
+      常陸国はその<em>磁場の中心</em>。大甕山の宿魂石に封じられた星神のエネルギーが、<br>
+      時代ごとに別の顔で噴出し、新たな権力者によって再封印される──<br>
+      物部神社の鎮魂法（死者蘇生の振動）はその<em>最も古い技術的記憶</em>である。
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot ld-deity"></div>神話・神格</div>
+    <div class="legend-item"><div class="legend-dot ld-clan"></div>氏族・権力体</div>
+    <div class="legend-item"><div class="legend-dot ld-hero"></div>英雄・怨霊</div>
+    <div class="legend-item"><div class="legend-dot ld-shog"></div>幕府・近世権力</div>
+    <div class="legend-item"><div class="legend-dot ld-plce"></div>地霊・場所</div>
+  </div>
+
+</div>
+
+<footer>物部神社由緒書き × 常陸国アマツミカボシ伝承 相関図 ／ 神話・歴史資料に基づく構造解析</footer>
+
+<script>
+  // Generate stars
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2 + 0.5;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --d:${2+Math.random()*4}s;
+      --delay:${-Math.random()*4}s;
+      --min-op:${0.1+Math.random()*0.2};
+      --max-op:${0.5+Math.random()*0.5};
+    `;
+    starsEl.appendChild(s);
+  }
+
+  // Make one star pulse gold (Amatsumikaboshi)
+  const special = document.createElement('div');
+  special.className = 'star';
+  special.style.cssText = `
+    width:6px; height:6px;
+    left:50%; top:18%;
+    background: #d4a843;
+    box-shadow: 0 0 12px 4px rgba(212,168,67,0.6);
+    --d:2s; --delay:0s; --min-op:0.6; --max-op:1;
+  `;
+  starsEl.appendChild(special);
+</script>
+</body>
+</html>
