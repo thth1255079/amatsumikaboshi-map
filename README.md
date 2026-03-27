@@ -1,1 +1,0 @@
-# amatsumikaboshi-map
